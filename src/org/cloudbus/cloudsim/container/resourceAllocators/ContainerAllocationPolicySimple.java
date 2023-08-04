@@ -5,7 +5,7 @@ package org.cloudbus.cloudsim.container.resourceAllocators;
 
 
 import org.cloudbus.cloudsim.container.core.Container;
-import org.cloudbus.cloudsim.container.core.ContainerVm;
+import org.cloudbus.cloudsim.container.core.ContainerPod;
 import org.cloudbus.cloudsim.Log;
 import org.cloudbus.cloudsim.core.CloudSim;
 
@@ -20,7 +20,7 @@ import java.util.Map;
  */
 public class ContainerAllocationPolicySimple extends ContainerAllocationPolicy {
 	/** The vm table. */
-	private Map<String, ContainerVm> containerVmTable;
+	private Map<String, ContainerPod> containerVmTable;
 
 	/** The used pes. */
 	private Map<String, Integer> usedPes;
@@ -28,7 +28,7 @@ public class ContainerAllocationPolicySimple extends ContainerAllocationPolicy {
 	/** The free pes. */
 	private List<Integer> freePes;
 	/**
-	 * Creates the new VmAllocationPolicySimple object.
+	 * Creates the new PodAllocationPolicySimple object.
 	 *
 	 * @pre $none
 	 * @post $none
@@ -36,17 +36,17 @@ public class ContainerAllocationPolicySimple extends ContainerAllocationPolicy {
 	public ContainerAllocationPolicySimple() {
 		super();
 		setFreePes(new ArrayList<Integer>());
-		setContainerVmTable(new HashMap<String, ContainerVm>());
+		setContainerVmTable(new HashMap<String, ContainerPod>());
 		setUsedPes(new HashMap<String, Integer>());
 	}
 
 
 	@Override
-	public boolean allocateVmForContainer(Container container, List<ContainerVm> containerVmList) {
+	public boolean allocateVmForContainer(Container container, List<ContainerPod> containerPodList) {
 //		the available container list is updated. It gets is from the data center.
-		setContainerVmList(containerVmList);
-		for (ContainerVm containerVm : getContainerVmList()) {
-			getFreePes().add(containerVm.getNumberOfPes());
+		setContainerVmList(containerPodList);
+		for (ContainerPod containerPod : getContainerVmList()) {
+			getFreePes().add(containerPod.getNumberOfPes());
 
 		}
 		int requiredPes = container.getNumberOfPes();
@@ -70,11 +70,11 @@ public class ContainerAllocationPolicySimple extends ContainerAllocationPolicy {
 					}
 				}
 
-				ContainerVm containerVm = getContainerVmList().get(idx);
-				result = containerVm.containerCreate(container);
+				ContainerPod containerPod = getContainerVmList().get(idx);
+				result = containerPod.containerCreate(container);
 
 				if (result) { // if vm were succesfully created in the host
-					getContainerVmTable().put(container.getUid(), containerVm);
+					getContainerVmTable().put(container.getUid(), containerPod);
 					getUsedPes().put(container.getUid(), requiredPes);
 					getFreePes().set(idx, getFreePes().get(idx) - requiredPes);
 					result = true;
@@ -93,9 +93,9 @@ public class ContainerAllocationPolicySimple extends ContainerAllocationPolicy {
 	}
 
 	@Override
-	public boolean allocateVmForContainer(Container container, ContainerVm containerVm) {
-		if (containerVm.containerCreate(container)) { // if vm has been succesfully created in the host
-			getContainerVmTable().put(container.getUid(), containerVm);
+	public boolean allocateVmForContainer(Container container, ContainerPod containerPod) {
+		if (containerPod.containerCreate(container)) { // if vm has been succesfully created in the host
+			getContainerVmTable().put(container.getUid(), containerPod);
 
 			int requiredPes = container.getNumberOfPes();
 			int idx = getContainerVmList().indexOf(container);
@@ -103,7 +103,7 @@ public class ContainerAllocationPolicySimple extends ContainerAllocationPolicy {
 			getFreePes().set(idx, getFreePes().get(idx) - requiredPes);
 
 			Log.formatLine(
-					"%.2f: Container #" + container.getId() + " has been allocated to the Vm #" + containerVm.getId(),
+					"%.2f: Container #" + container.getId() + " has been allocated to the Pod #" + containerPod.getId(),
 					CloudSim.clock());
 			return true;
 		}
@@ -120,31 +120,31 @@ public class ContainerAllocationPolicySimple extends ContainerAllocationPolicy {
 	@Override
 	public void deallocateVmForContainer(Container container) {
 
-		ContainerVm containerVm = getContainerVmTable().remove(container.getUid());
-		int idx = getContainerVmList().indexOf(containerVm);
+		ContainerPod containerPod = getContainerVmTable().remove(container.getUid());
+		int idx = getContainerVmList().indexOf(containerPod);
 		int pes = getUsedPes().remove(container.getUid());
-		if (containerVm != null) {
-			containerVm.containerDestroy(container);
+		if (containerPod != null) {
+			containerPod.containerDestroy(container);
 			getFreePes().set(idx, getFreePes().get(idx) + pes);
 		}
 
 	}
 
 	@Override
-	public ContainerVm getContainerVm(Container container) {
+	public ContainerPod getContainerVm(Container container) {
 		return getContainerVmTable().get(container.getUid());
 	}
 
 	@Override
-	public ContainerVm getContainerVm(int containerId, int userId) {
+	public ContainerPod getContainerVm(int containerId, int userId) {
 		return getContainerVmTable().get(Container.getUid(userId, containerId));
 	}
 
-	protected Map<String, ContainerVm> getContainerVmTable() {
+	protected Map<String, ContainerPod> getContainerVmTable() {
 		return containerVmTable;
 	}
 
-	protected void setContainerVmTable(Map<String, ContainerVm> containerVmTable) {
+	protected void setContainerVmTable(Map<String, ContainerPod> containerVmTable) {
 		this.containerVmTable = containerVmTable;
 	}
 

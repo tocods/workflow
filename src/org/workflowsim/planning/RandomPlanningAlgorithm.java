@@ -17,8 +17,7 @@ package org.workflowsim.planning;
 
 import java.util.Iterator;
 import java.util.Random;
-import org.cloudbus.cloudsim.container.core.ContainerVm;
-import org.workflowsim.CondorVM;
+import org.cloudbus.cloudsim.container.core.ContainerPod;
 import org.workflowsim.Task;
 import org.workflowsim.utils.Parameters;
 
@@ -58,7 +57,7 @@ public class RandomPlanningAlgorithm extends BasePlanningAlgorithm {
             
             int vmId = random.nextInt(vmNum);
             
-            ContainerVm vm = (ContainerVm) getVmList().get(vmId);
+            ContainerPod vm = (ContainerPod) getVmList().get(vmId);
             //This shows the cpu capability of a vm
             double mips = vm.getMips();
             

@@ -5,7 +5,7 @@ package org.cloudbus.cloudsim.container.utils;
  */
 
 import org.cloudbus.cloudsim.container.containerProvisioners.ContainerPe;
-import org.cloudbus.cloudsim.container.containerVmProvisioners.ContainerVmPe;
+import org.cloudbus.cloudsim.container.containerPodProvisioners.ContainerPodPe;
 import org.cloudbus.cloudsim.container.core.*;
 
 import java.util.LinkedHashMap;
@@ -31,11 +31,11 @@ public final class IDs {
 
     static {
         COUNTERS.put(ContainerCloudlet.class, 1);
-        COUNTERS.put(ContainerVm.class, 1);
+        COUNTERS.put(ContainerPod.class, 1);
         COUNTERS.put(Container.class, 1);
         COUNTERS.put(ContainerHost.class, 1);        
         COUNTERS.put(ContainerPe.class, 1);
-        COUNTERS.put(ContainerVmPe.class, 1);
+        COUNTERS.put(ContainerPodPe.class, 1);
     }
 
     private IDs() {

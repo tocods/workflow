@@ -17,13 +17,13 @@ import java.util.Map;
 import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.DatacenterCharacteristics;
 import org.cloudbus.cloudsim.Log;
-import org.cloudbus.cloudsim.Vm;
+import org.cloudbus.cloudsim.Pod;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.core.CloudSimTags;
 import org.cloudbus.cloudsim.core.SimEntity;
 import org.cloudbus.cloudsim.core.SimEvent;
 import org.cloudbus.cloudsim.distributions.UniformDistr;
-import org.cloudbus.cloudsim.lists.VmList;
+import org.cloudbus.cloudsim.lists.PodList;
 
 /**
  * NetDatacentreBroker represents a broker acting on behalf of Datacenter provider. It hides VM
@@ -42,10 +42,10 @@ public class NetDatacenterBroker extends SimEntity {
 	// TODO: remove unnecessary variables
 
 	/** The list of submitted VMs. */
-	private List<? extends Vm> vmList;
+	private List<? extends Pod> vmList;
 
 	/** The list of created VMs. */
-	private List<? extends Vm> vmsCreatedList;
+	private List<? extends Pod> vmsCreatedList;
 
 	/** The list of submitted {@link NetworkCloudlet NetworkCloudlets}. */
 	private List<? extends NetworkCloudlet> cloudletList;
@@ -114,8 +114,8 @@ public class NetDatacenterBroker extends SimEntity {
 	public NetDatacenterBroker(String name) throws Exception {
 		super(name);
 
-		setVmList(new ArrayList<NetworkVm>());
-		setVmsCreatedList(new ArrayList<NetworkVm>());
+		setVmList(new ArrayList<NetworkPod>());
+		setVmsCreatedList(new ArrayList<NetworkPod>());
 		setCloudletList(new ArrayList<NetworkCloudlet>());
 		setAppCloudletList(new ArrayList<AppCloudlet>());
 		setCloudletSubmittedList(new ArrayList<Cloudlet>());
@@ -143,7 +143,7 @@ public class NetDatacenterBroker extends SimEntity {
 	 * @pre list !=null
 	 * @post $none
 	 */
-	public void submitVmList(List<? extends Vm> list) {
+	public void submitVmList(List<? extends Pod> list) {
 		getVmList().addAll(list);
 	}
 
@@ -392,7 +392,7 @@ public class NetDatacenterBroker extends SimEntity {
 			String vmm = "Xen"; // VMM name
 
 			// create VM
-			NetworkVm vm = new NetworkVm(
+			NetworkPod vm = new NetworkPod(
 					vmid,
 					getId(),
 					mips,
@@ -403,10 +403,10 @@ public class NetDatacenterBroker extends SimEntity {
 					vmm,
 					new NetworkCloudletSpaceSharedScheduler());
 			linkDC.processVmCreateNetwork(vm);
-			// add the VM to the vmList
+			// add the VM to the podList
 			getVmList().add(vm);
 			getVmsToDatacentersMap().put(vmid, datacenterId);
-			getVmsCreatedList().add(VmList.getById(getVmList(), vmid));
+			getVmsCreatedList().add(PodList.getById(getVmList(), vmid));
 		}
 	}
 
@@ -420,9 +420,9 @@ public class NetDatacenterBroker extends SimEntity {
 	 * @post $none
 	 */
 	protected void clearDatacenters() {
-		for (Vm vm : getVmsCreatedList()) {
-			Log.printConcatLine(CloudSim.clock(), ": ", getName(), ": Destroying VM #", vm.getId());
-			sendNow(getVmsToDatacentersMap().get(vm.getId()), CloudSimTags.VM_DESTROY, vm);
+		for (Pod pod : getVmsCreatedList()) {
+			Log.printConcatLine(CloudSim.clock(), ": ", getName(), ": Destroying VM #", pod.getId());
+			sendNow(getVmsToDatacentersMap().get(pod.getId()), CloudSimTags.VM_DESTROY, pod);
 		}
 
 		getVmsCreatedList().clear();
@@ -456,7 +456,7 @@ public class NetDatacenterBroker extends SimEntity {
 	 * @return the vm list
 	 */
 	@SuppressWarnings("unchecked")
-	public <T extends Vm> List<T> getVmList() {
+	public <T extends Pod> List<T> getVmList() {
 		return (List<T>) vmList;
 	}
 
@@ -466,7 +466,7 @@ public class NetDatacenterBroker extends SimEntity {
 	 * @param <T> the generic type
 	 * @param vmList the new vm list
 	 */
-	protected <T extends Vm> void setVmList(List<T> vmList) {
+	protected <T extends Pod> void setVmList(List<T> vmList) {
 		this.vmList = vmList;
 	}
 
@@ -549,7 +549,7 @@ public class NetDatacenterBroker extends SimEntity {
 	 * @return the vm list
 	 */
 	@SuppressWarnings("unchecked")
-	public <T extends Vm> List<T> getVmsCreatedList() {
+	public <T extends Pod> List<T> getVmsCreatedList() {
 		return (List<T>) vmsCreatedList;
 	}
 
@@ -559,7 +559,7 @@ public class NetDatacenterBroker extends SimEntity {
 	 * @param <T> the generic type
 	 * @param vmsCreatedList the vms created list
 	 */
-	protected <T extends Vm> void setVmsCreatedList(List<T> vmsCreatedList) {
+	protected <T extends Pod> void setVmsCreatedList(List<T> vmsCreatedList) {
 		this.vmsCreatedList = vmsCreatedList;
 	}
 

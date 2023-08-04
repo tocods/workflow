@@ -4,7 +4,7 @@ package org.cloudbus.cloudsim.container.containerSelectionPolicies;
 import org.cloudbus.cloudsim.container.core.Container;
 import org.cloudbus.cloudsim.container.core.PowerContainer;
 import org.cloudbus.cloudsim.container.core.PowerContainerHost;
-import org.cloudbus.cloudsim.container.core.PowerContainerVm;
+import org.cloudbus.cloudsim.container.core.PowerContainerPod;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +30,7 @@ public abstract class PowerContainerSelectionPolicy {
      */
     protected List<PowerContainer> getMigratableContainers(PowerContainerHost host) {
         List<PowerContainer> migratableContainers= new ArrayList<>();
-        for (PowerContainerVm vm : host.<PowerContainerVm> getVmList()) {
+        for (PowerContainerPod vm : host.<PowerContainerPod> getVmList()) {
             if (!vm.isInMigration()) {
                 for (Container container: vm.getContainerList()){
 

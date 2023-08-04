@@ -322,4 +322,9 @@ public class Task extends ContainerCloudlet  {
         cost += costPerBw * fileSize;
         return cost;
     }
+
+    @Override
+    public Boolean ifJob() {
+        return true;
+    }
 }

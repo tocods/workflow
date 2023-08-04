@@ -18,12 +18,11 @@ package org.workflowsim;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import org.cloudbus.cloudsim.DatacenterBroker;
+
 import org.cloudbus.cloudsim.Log;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.core.CloudSimTags;
 import org.cloudbus.cloudsim.core.SimEvent;
-import org.cloudbus.cloudsim.lists.VmList;
 import org.workflowsim.failure.FailureGenerator;
 import org.workflowsim.scheduling.DataAwareSchedulingAlgorithm;
 import org.workflowsim.scheduling.BaseSchedulingAlgorithm;
@@ -37,7 +36,7 @@ import org.workflowsim.utils.Parameters;
 import org.workflowsim.utils.Parameters.SchedulingAlgorithm;
 import org.cloudbus.cloudsim.container.core.*;
 import org.wfc.scheduler.WFCScheduler;
-import org.cloudbus.cloudsim.container.lists.ContainerVmList;
+
 /**
  * WorkflowScheduler represents a algorithm acting on behalf of a user. It hides
  * VM management, as vm creation, sumbission of jobs to this VMs and destruction
@@ -255,7 +254,7 @@ public class WorkflowScheduler extends WFCScheduler {
         getCloudletReceivedList().add(cloudlet);
         getCloudletSubmittedList().remove(cloudlet);
 
-        ContainerVm vm = (ContainerVm) getVmsCreatedList().get(cloudlet.getVmId());
+        ContainerPod vm = (ContainerPod) getVmsCreatedList().get(cloudlet.getVmId());
         //so that this resource is released
         vm.setState(WorkflowSimTags.VM_STATUS_IDLE);
 

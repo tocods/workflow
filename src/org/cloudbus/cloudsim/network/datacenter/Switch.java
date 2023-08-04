@@ -18,13 +18,13 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import org.cloudbus.cloudsim.Log;
-import org.cloudbus.cloudsim.Vm;
+import org.cloudbus.cloudsim.Pod;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.core.CloudSimTags;
 import org.cloudbus.cloudsim.core.SimEntity;
 import org.cloudbus.cloudsim.core.SimEvent;
 import org.cloudbus.cloudsim.core.predicates.PredicateType;
-import org.cloudbus.cloudsim.lists.VmList;
+import org.cloudbus.cloudsim.lists.PodList;
 
 /**
  * Represents a Network Switch.
@@ -122,7 +122,7 @@ public class Switch extends SimEntity {
 
 	/** Something is running on these hosts. 
          * @todo The attribute doesn't appear to be used */
-	public SortedMap<Double, List<NetworkVm>> fintimelistVM = new TreeMap<Double, List<NetworkVm>>();
+	public SortedMap<Double, List<NetworkPod>> fintimelistVM = new TreeMap<Double, List<NetworkPod>>();
 
         /**
          * List of  received packets.
@@ -131,7 +131,7 @@ public class Switch extends SimEntity {
 
 	/** 
          * @todo The attribute doesn't appear to be used */
-	public List<Vm> BagofTaskVm = new ArrayList<Vm>();
+	public List<Pod> bagofTaskPod = new ArrayList<Pod>();
 
         /**
          * The time the switch spends to process a received packet.
@@ -150,7 +150,7 @@ public class Switch extends SimEntity {
          * A map of VMs connected to this switch.
          * @todo The list doesn't appear to be updated (VMs added to it) anywhere. 
          */
-	public Map<Integer, NetworkVm> Vmlist = new HashMap<Integer, NetworkVm>();
+	public Map<Integer, NetworkPod> Vmlist = new HashMap<Integer, NetworkPod>();
 
 	public Switch(String name, int level, NetworkDatacenter dc) {
 		super(name);
@@ -458,8 +458,8 @@ public class Switch extends SimEntity {
          */
 	protected NetworkHost getHostwithVM(int vmid) {
 		for (Entry<Integer, NetworkHost> es : hostlist.entrySet()) {
-			Vm vm = VmList.getById(es.getValue().getVmList(), vmid);
-			if (vm != null) {
+			Pod pod = PodList.getById(es.getValue().getVmList(), vmid);
+			if (pod != null) {
 				return es.getValue();
 			}
 		}
@@ -472,9 +472,9 @@ public class Switch extends SimEntity {
          * @param numVMReq The number of free VMs to get.
          * @return the list of free VMs.
          */
-	protected List<NetworkVm> getfreeVmlist(int numVMReq) {
-		List<NetworkVm> freehostls = new ArrayList<NetworkVm>();
-		for (Entry<Integer, NetworkVm> et : Vmlist.entrySet()) {
+	protected List<NetworkPod> getfreeVmlist(int numVMReq) {
+		List<NetworkPod> freehostls = new ArrayList<NetworkPod>();
+		for (Entry<Integer, NetworkPod> et : Vmlist.entrySet()) {
 			if (et.getValue().isFree()) {
 				freehostls.add(et.getValue());
 			}

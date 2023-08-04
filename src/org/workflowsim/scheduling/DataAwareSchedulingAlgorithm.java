@@ -17,7 +17,7 @@ package org.workflowsim.scheduling;
 
 import java.util.List;
 import org.cloudbus.cloudsim.Cloudlet;
-import org.cloudbus.cloudsim.container.core.ContainerVm;
+import org.cloudbus.cloudsim.container.core.ContainerPod;
 import org.workflowsim.FileItem;
 import org.workflowsim.Job;
 import org.workflowsim.WorkflowSimTags;
@@ -47,10 +47,10 @@ public class DataAwareSchedulingAlgorithm extends BaseSchedulingAlgorithm {
             Cloudlet cloudlet = (Cloudlet) getCloudletList().get(i);
 
             int vmSize = getVmList().size();
-            ContainerVm closestVm = null;//(CondorVM)getVmList().get(0);
+            ContainerPod closestVm = null;//(CondorPod)getVmList().get(0);
             double minTime = Double.MAX_VALUE;
             for (int j = 0; j < vmSize; j++) {
-                ContainerVm vm = (ContainerVm) getVmList().get(j);
+                ContainerPod vm = (ContainerPod) getVmList().get(j);
                 if (vm.getState() == WorkflowSimTags.VM_STATUS_IDLE) {
                     Job job = (Job)cloudlet;
                     double time = dataTransferTime(job.getFileList(), cloudlet, vm.getId());

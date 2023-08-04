@@ -6,26 +6,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
 
-import org.cloudbus.cloudsim.Cloudlet;
-import org.cloudbus.cloudsim.DatacenterBroker;
-import org.cloudbus.cloudsim.Log;
-import org.cloudbus.cloudsim.Vm;
-import org.cloudbus.cloudsim.VmAllocationPolicy;
+import org.cloudbus.cloudsim.*;
+import org.cloudbus.cloudsim.PodAllocationPolicy;
 import org.cloudbus.cloudsim.core.CloudSim;
-import org.cloudbus.cloudsim.power.PowerDatacenter;
-import org.cloudbus.cloudsim.power.PowerHost;
-import org.cloudbus.cloudsim.power.PowerVmAllocationPolicyMigrationAbstract;
-import org.cloudbus.cloudsim.power.PowerVmAllocationPolicyMigrationInterQuartileRange;
-import org.cloudbus.cloudsim.power.PowerVmAllocationPolicyMigrationLocalRegression;
-import org.cloudbus.cloudsim.power.PowerVmAllocationPolicyMigrationLocalRegressionRobust;
-import org.cloudbus.cloudsim.power.PowerVmAllocationPolicyMigrationMedianAbsoluteDeviation;
-import org.cloudbus.cloudsim.power.PowerVmAllocationPolicyMigrationStaticThreshold;
-import org.cloudbus.cloudsim.power.PowerVmAllocationPolicySimple;
-import org.cloudbus.cloudsim.power.PowerVmSelectionPolicy;
-import org.cloudbus.cloudsim.power.PowerVmSelectionPolicyMaximumCorrelation;
-import org.cloudbus.cloudsim.power.PowerVmSelectionPolicyMinimumMigrationTime;
-import org.cloudbus.cloudsim.power.PowerVmSelectionPolicyMinimumUtilization;
-import org.cloudbus.cloudsim.power.PowerVmSelectionPolicyRandomSelection;
+import org.cloudbus.cloudsim.power.*;
+import org.cloudbus.cloudsim.power.PowerPodAllocationPolicyMigrationAbstract;
 
 /**
  * The Class RunnerAbstract.
@@ -52,7 +37,7 @@ public abstract class RunnerAbstract {
 	protected static List<Cloudlet> cloudletList;
 
 	/** The vm list. */
-	protected static List<Vm> vmList;
+	protected static List<Pod> podList;
 
 	/** The host list. */
 	protected static List<PowerHost> hostList;
@@ -152,9 +137,9 @@ public abstract class RunnerAbstract {
 	 * 
 	 * @param experimentName the experiment name
 	 * @param outputFolder the output folder
-	 * @param vmAllocationPolicy the vm allocation policy
+	 * @param podAllocationPolicy the vm allocation policy
 	 */
-	protected void start(String experimentName, String outputFolder, VmAllocationPolicy vmAllocationPolicy) {
+	protected void start(String experimentName, String outputFolder, PodAllocationPolicy podAllocationPolicy) {
 		System.out.println("Starting " + experimentName);
 
 		try {
@@ -162,11 +147,11 @@ public abstract class RunnerAbstract {
 					"Datacenter",
 					PowerDatacenter.class,
 					hostList,
-					vmAllocationPolicy);
+					podAllocationPolicy);
 
 			datacenter.setDisableMigrations(false);
 
-			broker.submitVmList(vmList);
+			broker.submitVmList(podList);
 			broker.submitCloudletList(cloudletList);
 
 			CloudSim.terminateSimulation(Constants.SIMULATION_LIMIT);
@@ -179,7 +164,7 @@ public abstract class RunnerAbstract {
 
 			Helper.printResults(
 					datacenter,
-					vmList,
+                    podList,
 					lastClock,
 					experimentName,
 					Constants.OUTPUT_CSV,
@@ -222,12 +207,12 @@ public abstract class RunnerAbstract {
 	 * @param parameterName the parameter name
 	 * @return the vm allocation policy
 	 */
-	protected VmAllocationPolicy getVmAllocationPolicy(
+	protected PodAllocationPolicy getVmAllocationPolicy(
 			String vmAllocationPolicyName,
 			String vmSelectionPolicyName,
 			String parameterName) {
-		VmAllocationPolicy vmAllocationPolicy = null;
-		PowerVmSelectionPolicy vmSelectionPolicy = null;
+		PodAllocationPolicy podAllocationPolicy = null;
+		PowerPodSelectionPolicy vmSelectionPolicy = null;
 		if (!vmSelectionPolicyName.isEmpty()) {
 			vmSelectionPolicy = getVmSelectionPolicy(vmSelectionPolicyName);
 		}
@@ -236,59 +221,59 @@ public abstract class RunnerAbstract {
 			parameter = Double.valueOf(parameterName);
 		}
 		if (vmAllocationPolicyName.equals("iqr")) {
-			PowerVmAllocationPolicyMigrationAbstract fallbackVmSelectionPolicy = new PowerVmAllocationPolicyMigrationStaticThreshold(
+			PowerPodAllocationPolicyMigrationAbstract fallbackVmSelectionPolicy = new PowerPodAllocationPolicyMigrationStaticThreshold(
 					hostList,
 					vmSelectionPolicy,
 					0.7);
-			vmAllocationPolicy = new PowerVmAllocationPolicyMigrationInterQuartileRange(
+			podAllocationPolicy = new PowerPodAllocationPolicyMigrationInterQuartileRange(
 					hostList,
 					vmSelectionPolicy,
 					parameter,
 					fallbackVmSelectionPolicy);
 		} else if (vmAllocationPolicyName.equals("mad")) {
-			PowerVmAllocationPolicyMigrationAbstract fallbackVmSelectionPolicy = new PowerVmAllocationPolicyMigrationStaticThreshold(
+			PowerPodAllocationPolicyMigrationAbstract fallbackVmSelectionPolicy = new PowerPodAllocationPolicyMigrationStaticThreshold(
 					hostList,
 					vmSelectionPolicy,
 					0.7);
-			vmAllocationPolicy = new PowerVmAllocationPolicyMigrationMedianAbsoluteDeviation(
+			podAllocationPolicy = new PowerPodAllocationPolicyMigrationMedianAbsoluteDeviation(
 					hostList,
 					vmSelectionPolicy,
 					parameter,
 					fallbackVmSelectionPolicy);
 		} else if (vmAllocationPolicyName.equals("lr")) {
-			PowerVmAllocationPolicyMigrationAbstract fallbackVmSelectionPolicy = new PowerVmAllocationPolicyMigrationStaticThreshold(
+			PowerPodAllocationPolicyMigrationAbstract fallbackVmSelectionPolicy = new PowerPodAllocationPolicyMigrationStaticThreshold(
 					hostList,
 					vmSelectionPolicy,
 					0.7);
-			vmAllocationPolicy = new PowerVmAllocationPolicyMigrationLocalRegression(
+			podAllocationPolicy = new PowerPodAllocationPolicyMigrationLocalRegression(
 					hostList,
 					vmSelectionPolicy,
 					parameter,
 					Constants.SCHEDULING_INTERVAL,
 					fallbackVmSelectionPolicy);
 		} else if (vmAllocationPolicyName.equals("lrr")) {
-			PowerVmAllocationPolicyMigrationAbstract fallbackVmSelectionPolicy = new PowerVmAllocationPolicyMigrationStaticThreshold(
+			PowerPodAllocationPolicyMigrationAbstract fallbackVmSelectionPolicy = new PowerPodAllocationPolicyMigrationStaticThreshold(
 					hostList,
 					vmSelectionPolicy,
 					0.7);
-			vmAllocationPolicy = new PowerVmAllocationPolicyMigrationLocalRegressionRobust(
+			podAllocationPolicy = new PowerPodAllocationPolicyMigrationLocalRegressionRobust(
 					hostList,
 					vmSelectionPolicy,
 					parameter,
 					Constants.SCHEDULING_INTERVAL,
 					fallbackVmSelectionPolicy);
 		} else if (vmAllocationPolicyName.equals("thr")) {
-			vmAllocationPolicy = new PowerVmAllocationPolicyMigrationStaticThreshold(
+			podAllocationPolicy = new PowerPodAllocationPolicyMigrationStaticThreshold(
 					hostList,
 					vmSelectionPolicy,
 					parameter);
 		} else if (vmAllocationPolicyName.equals("dvfs")) {
-			vmAllocationPolicy = new PowerVmAllocationPolicySimple(hostList);
+			podAllocationPolicy = new PowerPodAllocationPolicySimple(hostList);
 		} else {
 			System.out.println("Unknown VM allocation policy: " + vmAllocationPolicyName);
 			System.exit(0);
 		}
-		return vmAllocationPolicy;
+		return podAllocationPolicy;
 	}
 
 	/**
@@ -297,17 +282,17 @@ public abstract class RunnerAbstract {
 	 * @param vmSelectionPolicyName the vm selection policy name
 	 * @return the vm selection policy
 	 */
-	protected PowerVmSelectionPolicy getVmSelectionPolicy(String vmSelectionPolicyName) {
-		PowerVmSelectionPolicy vmSelectionPolicy = null;
+	protected PowerPodSelectionPolicy getVmSelectionPolicy(String vmSelectionPolicyName) {
+		PowerPodSelectionPolicy vmSelectionPolicy = null;
 		if (vmSelectionPolicyName.equals("mc")) {
-			vmSelectionPolicy = new PowerVmSelectionPolicyMaximumCorrelation(
-					new PowerVmSelectionPolicyMinimumMigrationTime());
+			vmSelectionPolicy = new PowerPodSelectionPolicyMaximumCorrelation(
+					new PowerPodSelectionPolicyMinimumMigrationTime());
 		} else if (vmSelectionPolicyName.equals("mmt")) {
-			vmSelectionPolicy = new PowerVmSelectionPolicyMinimumMigrationTime();
+			vmSelectionPolicy = new PowerPodSelectionPolicyMinimumMigrationTime();
 		} else if (vmSelectionPolicyName.equals("mu")) {
-			vmSelectionPolicy = new PowerVmSelectionPolicyMinimumUtilization();
+			vmSelectionPolicy = new PowerPodSelectionPolicyMinimumUtilization();
 		} else if (vmSelectionPolicyName.equals("rs")) {
-			vmSelectionPolicy = new PowerVmSelectionPolicyRandomSelection();
+			vmSelectionPolicy = new PowerPodSelectionPolicyRandomSelection();
 		} else {
 			System.out.println("Unknown VM selection policy: " + vmSelectionPolicyName);
 			System.exit(0);

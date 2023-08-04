@@ -57,7 +57,7 @@ public class ContainerSchedulerTimeShared extends ContainerScheduler {
      * Update allocation of VMs on PEs.
      */
     protected void updatePeProvisioning() {
-//        Log.printLine("VmSchedulerTimeShared: update the pe provisioning......");
+//        Log.printLine("PodSchedulerTimeShared: update the pe provisioning......");
         getPeMap().clear();
         for (ContainerPe pe : getPeList()) {
             pe.getContainerPeProvisioner().deallocateMipsForAllContainers();

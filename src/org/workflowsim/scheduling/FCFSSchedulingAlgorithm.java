@@ -17,7 +17,7 @@ package org.workflowsim.scheduling;
 
 import java.util.Iterator;
 import org.cloudbus.cloudsim.Cloudlet;
-import org.cloudbus.cloudsim.container.core.ContainerVm;
+import org.cloudbus.cloudsim.container.core.ContainerPod;
 import org.workflowsim.WorkflowSimTags;
 
 /**
@@ -41,7 +41,7 @@ public class FCFSSchedulingAlgorithm extends BaseSchedulingAlgorithm {
             boolean stillHasVm = false;
             for (Iterator itc = getVmList().iterator(); itc.hasNext();) {
 
-                ContainerVm vm = (ContainerVm) itc.next();
+                ContainerPod vm = (ContainerPod) itc.next();
                 if (vm.getState() == WorkflowSimTags.VM_STATUS_IDLE) {
                     stillHasVm = true;
                     vm.setState(WorkflowSimTags.VM_STATUS_BUSY);

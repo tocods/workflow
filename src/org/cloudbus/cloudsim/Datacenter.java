@@ -24,7 +24,7 @@ import org.cloudbus.cloudsim.core.SimEvent;
  * 
  * So, even though an AllocPolicy will be instantiated (in the init() method of the superclass, 
  * it will not be used, as processing of cloudlets are handled by the CloudletScheduler and 
- * processing of VirtualMachines are handled by the VmAllocationPolicy.
+ * processing of VirtualMachines are handled by the PodAllocationPolicy.
  * 
  * @author Rodrigo N. Calheiros
  * @author Anton Beloglazov
@@ -45,7 +45,7 @@ public class Datacenter extends SimEntity {
 	private String regionalCisName;
 
 	/** The vm provisioner. */
-	private VmAllocationPolicy vmAllocationPolicy;
+	private PodAllocationPolicy podAllocationPolicy;
 
 	/** The last time some cloudlet was processed in the datacenter. */
 	private double lastProcessTime;
@@ -54,7 +54,7 @@ public class Datacenter extends SimEntity {
 	private List<Storage> storageList;
 
 	/** The vm list. */
-	private List<? extends Vm> vmList;
+	private List<? extends Pod> vmList;
 
 	/** The scheduling delay to process each datacenter received event. */
 	private double schedulingInterval;
@@ -65,7 +65,7 @@ public class Datacenter extends SimEntity {
 	 * @param name the name to be associated with this entity (as required by the super class)
 	 * @param characteristics the characteristics of the datacenter to be created
 	 * @param storageList a List of storage elements, for data simulation
-	 * @param vmAllocationPolicy the policy to be used to allocate VMs into hosts
+	 * @param podAllocationPolicy the policy to be used to allocate VMs into hosts
          * @param schedulingInterval the scheduling delay to process each datacenter received event
 	 * @throws Exception when one of the following scenarios occur:
 	 *  <ul>
@@ -83,16 +83,16 @@ public class Datacenter extends SimEntity {
 	public Datacenter(
 			String name,
 			DatacenterCharacteristics characteristics,
-			VmAllocationPolicy vmAllocationPolicy,
+			PodAllocationPolicy podAllocationPolicy,
 			List<Storage> storageList,
 			double schedulingInterval) throws Exception {
 		super(name);
 
 		setCharacteristics(characteristics);
-		setVmAllocationPolicy(vmAllocationPolicy);
+		setVmAllocationPolicy(podAllocationPolicy);
 		setLastProcessTime(0.0);
 		setStorageList(storageList);
-		setVmList(new ArrayList<Vm>());
+		setVmList(new ArrayList<Pod>());
 		setSchedulingInterval(schedulingInterval);
 
 		for (Host host : getCharacteristics().getHostList()) {
@@ -440,32 +440,32 @@ public class Datacenter extends SimEntity {
 	 * @post $none
 	 */
 	protected void processVmCreate(SimEvent ev, boolean ack) {
-		Vm vm = (Vm) ev.getData();
+		Pod pod = (Pod) ev.getData();
 
-		boolean result = getVmAllocationPolicy().allocateHostForVm(vm);
+		boolean result = getVmAllocationPolicy().allocateHostForVm(pod);
 
 		if (ack) {
 			int[] data = new int[3];
 			data[0] = getId();
-			data[1] = vm.getId();
+			data[1] = pod.getId();
 
 			if (result) {
 				data[2] = CloudSimTags.TRUE;
 			} else {
 				data[2] = CloudSimTags.FALSE;
 			}
-			send(vm.getUserId(), CloudSim.getMinTimeBetweenEvents(), CloudSimTags.VM_CREATE_ACK, data);
+			send(pod.getUserId(), CloudSim.getMinTimeBetweenEvents(), CloudSimTags.VM_CREATE_ACK, data);
 		}
 
 		if (result) {
-			getVmList().add(vm);
+			getVmList().add(pod);
 
-			if (vm.isBeingInstantiated()) {
-				vm.setBeingInstantiated(false);
+			if (pod.isBeingInstantiated()) {
+				pod.setBeingInstantiated(false);
 			}
 
-			vm.updateVmProcessing(CloudSim.clock(), getVmAllocationPolicy().getHost(vm).getVmScheduler()
-					.getAllocatedMipsForVm(vm));
+			pod.updateVmProcessing(CloudSim.clock(), getVmAllocationPolicy().getHost(pod).getVmScheduler()
+					.getAllocatedMipsForVm(pod));
 		}
 
 	}
@@ -483,19 +483,19 @@ public class Datacenter extends SimEntity {
 	 * @post $none
 	 */
 	protected void processVmDestroy(SimEvent ev, boolean ack) {
-		Vm vm = (Vm) ev.getData();
-		getVmAllocationPolicy().deallocateHostForVm(vm);
+		Pod pod = (Pod) ev.getData();
+		getVmAllocationPolicy().deallocateHostForVm(pod);
 
 		if (ack) {
 			int[] data = new int[3];
 			data[0] = getId();
-			data[1] = vm.getId();
+			data[1] = pod.getId();
 			data[2] = CloudSimTags.TRUE;
 
-			sendNow(vm.getUserId(), CloudSimTags.VM_DESTROY_ACK, data);
+			sendNow(pod.getUserId(), CloudSimTags.VM_DESTROY_ACK, data);
 		}
 
-		getVmList().remove(vm);
+		getVmList().remove(pod);
 	}
 
 	/**
@@ -518,12 +518,12 @@ public class Datacenter extends SimEntity {
 		@SuppressWarnings("unchecked")
 		Map<String, Object> migrate = (HashMap<String, Object>) tmp;
 
-		Vm vm = (Vm) migrate.get("vm");
+		Pod pod = (Pod) migrate.get("pod");
 		Host host = (Host) migrate.get("host");
 
-		getVmAllocationPolicy().deallocateHostForVm(vm);
-		host.removeMigratingInVm(vm);
-		boolean result = getVmAllocationPolicy().allocateHostForVm(vm, host);
+		getVmAllocationPolicy().deallocateHostForVm(pod);
+		host.removeMigratingInVm(pod);
+		boolean result = getVmAllocationPolicy().allocateHostForVm(pod, host);
 		if (!result) {
 			Log.printLine("[Datacenter.processVmMigrate] VM allocation to the destination host failed");
 			System.exit(0);
@@ -532,7 +532,7 @@ public class Datacenter extends SimEntity {
 		if (ack) {
 			int[] data = new int[3];
 			data[0] = getId();
-			data[1] = vm.getId();
+			data[1] = pod.getId();
 
 			if (result) {
 				data[2] = CloudSimTags.TRUE;
@@ -545,9 +545,9 @@ public class Datacenter extends SimEntity {
 		Log.formatLine(
 				"%.2f: Migration of VM #%d to Host #%d is completed",
 				CloudSim.clock(),
-				vm.getId(),
+				pod.getId(),
 				host.getId());
-		vm.setInMigration(false);
+		pod.setInMigration(false);
 	}
 
 	/**
@@ -660,13 +660,13 @@ public class Datacenter extends SimEntity {
 
 			// the cloudlet will migrate from one vm to another does the destination VM exist?
 			if (destId == getId()) {
-				Vm vm = getVmAllocationPolicy().getHost(vmDestId, userId).getVm(vmDestId,userId);
-				if (vm == null) {
+				Pod pod = getVmAllocationPolicy().getHost(vmDestId, userId).getVm(vmDestId,userId);
+				if (pod == null) {
 					failed = true;
 				} else {
 					// time to transfer the files
 					double fileTransferTime = predictFileTransferTime(cl.getRequiredFiles());
-					vm.getCloudletScheduler().cloudletSubmit(cl, fileTransferTime);
+					pod.getCloudletScheduler().cloudletSubmit(cl, fileTransferTime);
 				}
 			} else {// the cloudlet will migrate from one resource to another
 				int tag = ((type == CloudSimTags.CLOUDLET_MOVE_ACK) ? CloudSimTags.CLOUDLET_SUBMIT_ACK
@@ -746,8 +746,8 @@ public class Datacenter extends SimEntity {
 			double fileTransferTime = predictFileTransferTime(cl.getRequiredFiles());
 
 			Host host = getVmAllocationPolicy().getHost(vmId, userId);
-			Vm vm = host.getVm(vmId, userId);
-			CloudletScheduler scheduler = vm.getCloudletScheduler();
+			Pod pod = host.getVm(vmId, userId);
+			CloudletScheduler scheduler = pod.getCloudletScheduler();
 			double estimatedFinishTime = scheduler.cloudletSubmit(cl, fileTransferTime);
 
 			// if this cloudlet is in the exec queue
@@ -930,9 +930,9 @@ public class Datacenter extends SimEntity {
 		List<? extends Host> list = getVmAllocationPolicy().getHostList();
 		for (int i = 0; i < list.size(); i++) {
 			Host host = list.get(i);
-			for (Vm vm : host.getVmList()) {
-				while (vm.getCloudletScheduler().isFinishedCloudlets()) {
-					Cloudlet cl = vm.getCloudletScheduler().getNextFinishedCloudlet();
+			for (Pod pod : host.getVmList()) {
+				while (pod.getCloudletScheduler().isFinishedCloudlets()) {
+					Cloudlet cl = pod.getCloudletScheduler().getNextFinishedCloudlet();
 					if (cl != null) {
 						sendNow(cl.getUserId(), CloudSimTags.CLOUDLET_RETURN, cl);
 					}
@@ -1114,17 +1114,17 @@ public class Datacenter extends SimEntity {
 	 * 
 	 * @return the vm allocation policy
 	 */
-	public VmAllocationPolicy getVmAllocationPolicy() {
-		return vmAllocationPolicy;
+	public PodAllocationPolicy getVmAllocationPolicy() {
+		return podAllocationPolicy;
 	}
 
 	/**
 	 * Sets the vm allocation policy.
 	 * 
-	 * @param vmAllocationPolicy the new vm allocation policy
+	 * @param podAllocationPolicy the new vm allocation policy
 	 */
-	protected void setVmAllocationPolicy(VmAllocationPolicy vmAllocationPolicy) {
-		this.vmAllocationPolicy = vmAllocationPolicy;
+	protected void setVmAllocationPolicy(PodAllocationPolicy podAllocationPolicy) {
+		this.podAllocationPolicy = podAllocationPolicy;
 	}
 
 	/**
@@ -1169,7 +1169,7 @@ public class Datacenter extends SimEntity {
 	 * @return the vm list
 	 */
 	@SuppressWarnings("unchecked")
-	public <T extends Vm> List<T> getVmList() {
+	public <T extends Pod> List<T> getVmList() {
 		return (List<T>) vmList;
 	}
 
@@ -1178,7 +1178,7 @@ public class Datacenter extends SimEntity {
 	 * 
 	 * @param vmList the new vm list
 	 */
-	protected <T extends Vm> void setVmList(List<T> vmList) {
+	protected <T extends Pod> void setVmList(List<T> vmList) {
 		this.vmList = vmList;
 	}
 

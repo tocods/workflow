@@ -40,10 +40,10 @@ public class Host {
 	private BwProvisioner bwProvisioner;
 
 	/** The allocation policy for scheduling VM execution. */
-	private VmScheduler vmScheduler;
+	private PodScheduler podScheduler;
 
 	/** The list of VMs assigned to the host. */
-	private final List<? extends Vm> vmList = new ArrayList<Vm>();
+	private final List<? extends Pod> vmList = new ArrayList<Pod>();
 
 	/** The Processing Elements (PEs) of the host, that
          * represent the CPU cores of it, and thus, its processing capacity. */
@@ -53,7 +53,7 @@ public class Host {
 	private boolean failed;
 
 	/** The VMs migrating in. */
-	private final List<Vm> vmsMigratingIn = new ArrayList<Vm>();
+	private final List<Pod> vmsMigratingIn = new ArrayList<Pod>();
 
 	/** The datacenter where the host is placed. */
 	private Datacenter datacenter;
@@ -66,7 +66,7 @@ public class Host {
 	 * @param bwProvisioner the bw provisioner
 	 * @param storage the storage capacity
 	 * @param peList the host's PEs list
-	 * @param vmScheduler the vm scheduler
+	 * @param podScheduler the vm scheduler
 	 */
 	public Host(
 			int id,
@@ -74,12 +74,12 @@ public class Host {
 			BwProvisioner bwProvisioner,
 			long storage,
 			List<? extends Pe> peList,
-			VmScheduler vmScheduler) {
+			PodScheduler podScheduler) {
 		setId(id);
 		setRamProvisioner(ramProvisioner);
 		setBwProvisioner(bwProvisioner);
 		setStorage(storage);
-		setVmScheduler(vmScheduler);
+		setVmScheduler(podScheduler);
 
 		setPeList(peList);
 		setFailed(false);
@@ -94,7 +94,7 @@ public class Host {
 	 * @pre currentTime >= 0.0
 	 * @post $none
          * @todo there is an inconsistency between the return value of this method
-         * and the individual call of {@link Vm#updateVmProcessing(double, java.util.List),
+         * and the individual call of {@link Pod#updateVmProcessing(double, java.util.List),
          * and consequently the {@link CloudletScheduler#updateVmProcessing(double, java.util.List)}.
          * The current method returns {@link Double#MAX_VALUE}  while the other ones
          * return 0. It has to be checked if there is a reason for this
@@ -103,9 +103,9 @@ public class Host {
 	public double updateVmsProcessing(double currentTime) {
 		double smallerTime = Double.MAX_VALUE;
 
-		for (Vm vm : getVmList()) {
-			double time = vm.updateVmProcessing(
-                                currentTime, getVmScheduler().getAllocatedMipsForVm(vm));
+		for (Pod pod : getVmList()) {
+			double time = pod.updateVmProcessing(
+                                currentTime, getVmScheduler().getAllocatedMipsForVm(pod));
 			if (time > 0.0 && time < smallerTime) {
 				smallerTime = time;
 			}
@@ -117,57 +117,57 @@ public class Host {
 	/**
 	 * Adds a VM migrating into the current host.
 	 * 
-	 * @param vm the vm
+	 * @param pod the pod
 	 */
-	public void addMigratingInVm(Vm vm) {
-		vm.setInMigration(true);
+	public void addMigratingInVm(Pod pod) {
+		pod.setInMigration(true);
 
-		if (!getVmsMigratingIn().contains(vm)) {
-			if (getStorage() < vm.getSize()) {
-				Log.printConcatLine("[VmScheduler.addMigratingInVm] Allocation of VM #", vm.getId(), " to Host #",
+		if (!getVmsMigratingIn().contains(pod)) {
+			if (getStorage() < pod.getSize()) {
+				Log.printConcatLine("[PodScheduler.addMigratingInVm] Allocation of VM #", pod.getId(), " to Host #",
 						getId(), " failed by storage");
 				System.exit(0);
 			}
 
-			if (!getRamProvisioner().allocateRamForVm(vm, vm.getCurrentRequestedRam())) {
-				Log.printConcatLine("[VmScheduler.addMigratingInVm] Allocation of VM #", vm.getId(), " to Host #",
+			if (!getRamProvisioner().allocateRamForVm(pod, pod.getCurrentRequestedRam())) {
+				Log.printConcatLine("[PodScheduler.addMigratingInVm] Allocation of VM #", pod.getId(), " to Host #",
 						getId(), " failed by RAM");
 				System.exit(0);
 			}
 
-			if (!getBwProvisioner().allocateBwForVm(vm, vm.getCurrentRequestedBw())) {
-				Log.printLine("[VmScheduler.addMigratingInVm] Allocation of VM #" + vm.getId() + " to Host #"
+			if (!getBwProvisioner().allocateBwForVm(pod, pod.getCurrentRequestedBw())) {
+				Log.printLine("[PodScheduler.addMigratingInVm] Allocation of VM #" + pod.getId() + " to Host #"
 						+ getId() + " failed by BW");
 				System.exit(0);
 			}
 
-			getVmScheduler().getVmsMigratingIn().add(vm.getUid());
-			if (!getVmScheduler().allocatePesForVm(vm, vm.getCurrentRequestedMips())) {
-				Log.printLine("[VmScheduler.addMigratingInVm] Allocation of VM #" + vm.getId() + " to Host #"
+			getVmScheduler().getVmsMigratingIn().add(pod.getUid());
+			if (!getVmScheduler().allocatePesForVm(pod, pod.getCurrentRequestedMips())) {
+				Log.printLine("[PodScheduler.addMigratingInVm] Allocation of VM #" + pod.getId() + " to Host #"
 						+ getId() + " failed by MIPS");
 				System.exit(0);
 			}
 
-			setStorage(getStorage() - vm.getSize());
+			setStorage(getStorage() - pod.getSize());
 
-			getVmsMigratingIn().add(vm);
-			getVmList().add(vm);
+			getVmsMigratingIn().add(pod);
+			getVmList().add(pod);
 			updateVmsProcessing(CloudSim.clock());
-			vm.getHost().updateVmsProcessing(CloudSim.clock());
+			pod.getHost().updateVmsProcessing(CloudSim.clock());
 		}
 	}
 
 	/**
-	 * Removes a migrating in vm.
+	 * Removes a migrating in pod.
 	 * 
-	 * @param vm the vm
+	 * @param pod the pod
 	 */
-	public void removeMigratingInVm(Vm vm) {
-		vmDeallocate(vm);
-		getVmsMigratingIn().remove(vm);
-		getVmList().remove(vm);
-		getVmScheduler().getVmsMigratingIn().remove(vm.getUid());
-		vm.setInMigration(false);
+	public void removeMigratingInVm(Pod pod) {
+		vmDeallocate(pod);
+		getVmsMigratingIn().remove(pod);
+		getVmList().remove(pod);
+		getVmScheduler().getVmsMigratingIn().remove(pod.getUid());
+		pod.setInMigration(false);
 	}
 
 	/**
@@ -175,88 +175,88 @@ public class Host {
          * and allocate them on the host.
 	 */
 	public void reallocateMigratingInVms() {
-		for (Vm vm : getVmsMigratingIn()) {
-			if (!getVmList().contains(vm)) {
-				getVmList().add(vm);
+		for (Pod pod : getVmsMigratingIn()) {
+			if (!getVmList().contains(pod)) {
+				getVmList().add(pod);
 			}
-			if (!getVmScheduler().getVmsMigratingIn().contains(vm.getUid())) {
-				getVmScheduler().getVmsMigratingIn().add(vm.getUid());
+			if (!getVmScheduler().getVmsMigratingIn().contains(pod.getUid())) {
+				getVmScheduler().getVmsMigratingIn().add(pod.getUid());
 			}
-			getRamProvisioner().allocateRamForVm(vm, vm.getCurrentRequestedRam());
-			getBwProvisioner().allocateBwForVm(vm, vm.getCurrentRequestedBw());
-			getVmScheduler().allocatePesForVm(vm, vm.getCurrentRequestedMips());
-			setStorage(getStorage() - vm.getSize());
+			getRamProvisioner().allocateRamForVm(pod, pod.getCurrentRequestedRam());
+			getBwProvisioner().allocateBwForVm(pod, pod.getCurrentRequestedBw());
+			getVmScheduler().allocatePesForVm(pod, pod.getCurrentRequestedMips());
+			setStorage(getStorage() - pod.getSize());
 		}
 	}
 
 	/**
-	 * Checks if the host is suitable for vm. If it has enough resources
+	 * Checks if the host is suitable for pod. If it has enough resources
          * to attend the VM.
 	 * 
-	 * @param vm the vm
-	 * @return true, if is suitable for vm
+	 * @param pod the pod
+	 * @return true, if is suitable for pod
 	 */
-	public boolean isSuitableForVm(Vm vm) {
-		return (getVmScheduler().getPeCapacity() >= vm.getCurrentRequestedMaxMips()
-				&& getVmScheduler().getAvailableMips() >= vm.getCurrentRequestedTotalMips()
-				&& getRamProvisioner().isSuitableForVm(vm, vm.getCurrentRequestedRam()) && getBwProvisioner()
-				.isSuitableForVm(vm, vm.getCurrentRequestedBw()));
+	public boolean isSuitableForVm(Pod pod) {
+		return (getVmScheduler().getPeCapacity() >= pod.getCurrentRequestedMaxMips()
+				&& getVmScheduler().getAvailableMips() >= pod.getCurrentRequestedTotalMips()
+				&& getRamProvisioner().isSuitableForVm(pod, pod.getCurrentRequestedRam()) && getBwProvisioner()
+				.isSuitableForVm(pod, pod.getCurrentRequestedBw()));
 	}
 
 	/**
 	 * Try to allocate resources to a new VM in the Host.
 	 * 
-	 * @param vm Vm being started
+	 * @param pod Pod being started
 	 * @return $true if the VM could be started in the host; $false otherwise
 	 * @pre $none
 	 * @post $none
 	 */
-	public boolean vmCreate(Vm vm) {
-		if (getStorage() < vm.getSize()) {
-			Log.printConcatLine("[VmScheduler.vmCreate] Allocation of VM #", vm.getId(), " to Host #", getId(),
+	public boolean vmCreate(Pod pod) {
+		if (getStorage() < pod.getSize()) {
+			Log.printConcatLine("[PodScheduler.vmCreate] Allocation of VM #", pod.getId(), " to Host #", getId(),
 					" failed by storage");
 			return false;
 		}
 
-		if (!getRamProvisioner().allocateRamForVm(vm, vm.getCurrentRequestedRam())) {
-			Log.printConcatLine("[VmScheduler.vmCreate] Allocation of VM #", vm.getId(), " to Host #", getId(),
+		if (!getRamProvisioner().allocateRamForVm(pod, pod.getCurrentRequestedRam())) {
+			Log.printConcatLine("[PodScheduler.vmCreate] Allocation of VM #", pod.getId(), " to Host #", getId(),
 					" failed by RAM");
 			return false;
 		}
 
-		if (!getBwProvisioner().allocateBwForVm(vm, vm.getCurrentRequestedBw())) {
-			Log.printConcatLine("[VmScheduler.vmCreate] Allocation of VM #", vm.getId(), " to Host #", getId(),
+		if (!getBwProvisioner().allocateBwForVm(pod, pod.getCurrentRequestedBw())) {
+			Log.printConcatLine("[PodScheduler.vmCreate] Allocation of VM #", pod.getId(), " to Host #", getId(),
 					" failed by BW");
-			getRamProvisioner().deallocateRamForVm(vm);
+			getRamProvisioner().deallocateRamForVm(pod);
 			return false;
 		}
 
-		if (!getVmScheduler().allocatePesForVm(vm, vm.getCurrentRequestedMips())) {
-			Log.printConcatLine("[VmScheduler.vmCreate] Allocation of VM #", vm.getId(), " to Host #", getId(),
+		if (!getVmScheduler().allocatePesForVm(pod, pod.getCurrentRequestedMips())) {
+			Log.printConcatLine("[PodScheduler.vmCreate] Allocation of VM #", pod.getId(), " to Host #", getId(),
 					" failed by MIPS");
-			getRamProvisioner().deallocateRamForVm(vm);
-			getBwProvisioner().deallocateBwForVm(vm);
+			getRamProvisioner().deallocateRamForVm(pod);
+			getBwProvisioner().deallocateBwForVm(pod);
 			return false;
 		}
 
-		setStorage(getStorage() - vm.getSize());
-		getVmList().add(vm);
-		vm.setHost(this);
+		setStorage(getStorage() - pod.getSize());
+		getVmList().add(pod);
+		pod.setHost(this);
 		return true;
 	}
 
 	/**
 	 * Destroys a VM running in the host.
 	 * 
-	 * @param vm the VM
+	 * @param pod the VM
 	 * @pre $none
 	 * @post $none
 	 */
-	public void vmDestroy(Vm vm) {
-		if (vm != null) {
-			vmDeallocate(vm);
-			getVmList().remove(vm);
-			vm.setHost(null);
+	public void vmDestroy(Pod pod) {
+		if (pod != null) {
+			vmDeallocate(pod);
+			getVmList().remove(pod);
+			pod.setHost(null);
 		}
 	}
 
@@ -268,9 +268,9 @@ public class Host {
 	 */
 	public void vmDestroyAll() {
 		vmDeallocateAll();
-		for (Vm vm : getVmList()) {
-			vm.setHost(null);
-			setStorage(getStorage() + vm.getSize());
+		for (Pod pod : getVmList()) {
+			pod.setHost(null);
+			setStorage(getStorage() + pod.getSize());
 		}
 		getVmList().clear();
 	}
@@ -278,13 +278,13 @@ public class Host {
 	/**
 	 * Deallocate all resources of a VM.
 	 * 
-	 * @param vm the VM
+	 * @param pod the VM
 	 */
-	protected void vmDeallocate(Vm vm) {
-		getRamProvisioner().deallocateRamForVm(vm);
-		getBwProvisioner().deallocateBwForVm(vm);
-		getVmScheduler().deallocatePesForVm(vm);
-		setStorage(getStorage() + vm.getSize());
+	protected void vmDeallocate(Pod pod) {
+		getRamProvisioner().deallocateRamForVm(pod);
+		getBwProvisioner().deallocateBwForVm(pod);
+		getVmScheduler().deallocatePesForVm(pod);
+		setStorage(getStorage() + pod.getSize());
 	}
 
 	/**
@@ -305,10 +305,10 @@ public class Host {
 	 * @pre $none
 	 * @post $none
 	 */
-	public Vm getVm(int vmId, int userId) {
-		for (Vm vm : getVmList()) {
-			if (vm.getId() == vmId && vm.getUserId() == userId) {
-				return vm;
+	public Pod getVm(int vmId, int userId) {
+		for (Pod pod : getVmList()) {
+			if (pod.getId() == vmId && pod.getUserId() == userId) {
+				return pod;
 			}
 		}
 		return null;
@@ -344,47 +344,47 @@ public class Host {
 	/**
 	 * Allocates PEs for a VM.
 	 * 
-	 * @param vm the vm
+	 * @param pod the pod
 	 * @param mipsShare the list of MIPS share to be allocated to the VM
 	 * @return $true if this policy allows a new VM in the host, $false otherwise
 	 * @pre $none
 	 * @post $none
 	 */
-	public boolean allocatePesForVm(Vm vm, List<Double> mipsShare) {
-		return getVmScheduler().allocatePesForVm(vm, mipsShare);
+	public boolean allocatePesForVm(Pod pod, List<Double> mipsShare) {
+		return getVmScheduler().allocatePesForVm(pod, mipsShare);
 	}
 
 	/**
 	 * Releases PEs allocated to a VM.
 	 * 
-	 * @param vm the vm
+	 * @param pod the pod
 	 * @pre $none
 	 * @post $none
 	 */
-	public void deallocatePesForVm(Vm vm) {
-		getVmScheduler().deallocatePesForVm(vm);
+	public void deallocatePesForVm(Pod pod) {
+		getVmScheduler().deallocatePesForVm(pod);
 	}
 
 	/**
 	 * Gets the MIPS share of each Pe that is allocated to a given VM.
 	 * 
-	 * @param vm the vm
+	 * @param pod the pod
 	 * @return an array containing the amount of MIPS of each pe that is available to the VM
 	 * @pre $none
 	 * @post $none
 	 */
-	public List<Double> getAllocatedMipsForVm(Vm vm) {
-		return getVmScheduler().getAllocatedMipsForVm(vm);
+	public List<Double> getAllocatedMipsForVm(Pod pod) {
+		return getVmScheduler().getAllocatedMipsForVm(pod);
 	}
 
 	/**
 	 * Gets the total allocated MIPS for a VM along all its PEs.
 	 * 
-	 * @param vm the vm
-	 * @return the allocated mips for vm
+	 * @param pod the pod
+	 * @return the allocated mips for pod
 	 */
-	public double getTotalAllocatedMipsForVm(Vm vm) {
-		return getVmScheduler().getTotalAllocatedMipsForVm(vm);
+	public double getTotalAllocatedMipsForVm(Pod pod) {
+		return getVmScheduler().getTotalAllocatedMipsForVm(pod);
 	}
 
 	/**
@@ -497,17 +497,17 @@ public class Host {
 	 * 
 	 * @return the VM scheduler
 	 */
-	public VmScheduler getVmScheduler() {
-		return vmScheduler;
+	public PodScheduler getVmScheduler() {
+		return podScheduler;
 	}
 
 	/**
 	 * Sets the VM scheduler.
 	 * 
-	 * @param vmScheduler the vm scheduler
+	 * @param podScheduler the vm scheduler
 	 */
-	protected void setVmScheduler(VmScheduler vmScheduler) {
-		this.vmScheduler = vmScheduler;
+	protected void setVmScheduler(PodScheduler podScheduler) {
+		this.podScheduler = podScheduler;
 	}
 
 	/**
@@ -538,7 +538,7 @@ public class Host {
 	 * @return the vm list
 	 */
 	@SuppressWarnings("unchecked")
-	public <T extends Vm> List<T> getVmList() {
+	public <T extends Pod> List<T> getVmList() {
 		return (List<T>) vmList;
 	}
 
@@ -608,7 +608,7 @@ public class Host {
 	 * 
 	 * @return the vms migrating in
 	 */
-	public List<Vm> getVmsMigratingIn() {
+	public List<Pod> getVmsMigratingIn() {
 		return vmsMigratingIn;
 	}
 

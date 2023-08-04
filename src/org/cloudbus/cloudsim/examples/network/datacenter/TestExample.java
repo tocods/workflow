@@ -13,15 +13,10 @@ import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.Log;
 import org.cloudbus.cloudsim.Pe;
 import org.cloudbus.cloudsim.Storage;
-import org.cloudbus.cloudsim.VmSchedulerTimeShared;
+import org.cloudbus.cloudsim.PodSchedulerTimeShared;
 import org.cloudbus.cloudsim.core.CloudSim;
-import org.cloudbus.cloudsim.network.datacenter.EdgeSwitch;
-import org.cloudbus.cloudsim.network.datacenter.NetDatacenterBroker;
-import org.cloudbus.cloudsim.network.datacenter.NetworkConstants;
-import org.cloudbus.cloudsim.network.datacenter.NetworkDatacenter;
-import org.cloudbus.cloudsim.network.datacenter.NetworkHost;
-import org.cloudbus.cloudsim.network.datacenter.NetworkVm;
-import org.cloudbus.cloudsim.network.datacenter.NetworkVmAllocationPolicy;
+import org.cloudbus.cloudsim.network.datacenter.*;
+import org.cloudbus.cloudsim.network.datacenter.NetworkPod;
 import org.cloudbus.cloudsim.provisioners.BwProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.PeProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.RamProvisionerSimple;
@@ -29,7 +24,7 @@ import org.cloudbus.cloudsim.provisioners.RamProvisionerSimple;
 public class TestExample {
 
 	/** The vmlist. */
-	private static List<NetworkVm> vmlist;
+	private static List<NetworkPod> vmlist;
 
 	/**
 	 * Creates main() to run this example.
@@ -60,7 +55,7 @@ public class TestExample {
 			// broker.setLinkDC(datacenter0);
 			// Fifth step: Create one Cloudlet
 
-			vmlist = new ArrayList<NetworkVm>();
+			vmlist = new ArrayList<NetworkPod>();
 
 			// submit vm list to the broker
 
@@ -179,7 +174,7 @@ public class TestExample {
 					new BwProvisionerSimple(bw),
 					storage,
 					peList,
-					new VmSchedulerTimeShared(peList))); // This is our machine
+					new PodSchedulerTimeShared(peList))); // This is our machine
 		}
 
 		// 5. Create a DatacenterCharacteristics object that stores the
@@ -218,7 +213,7 @@ public class TestExample {
 			datacenter = new NetworkDatacenter(
 					name,
 					characteristics,
-					new NetworkVmAllocationPolicy(hostList),
+					new NetworkPodAllocationPolicy(hostList),
 					storageList,
 					0);
 

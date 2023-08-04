@@ -48,7 +48,7 @@ public final class WFCPlanner extends SimEntity {
     /**
      * The workflow parser.
      */
-    protected WFCParser parser;
+    protected YamlUtil parser;
     /**
      * The associated clustering engine.
      */
@@ -74,7 +74,7 @@ public final class WFCPlanner extends SimEntity {
         setTaskList(new ArrayList<>());
         this.clusteringEngine = new WFCEngineClustering(name + "_Merger_", schedulers);
         this.clusteringEngineId = this.clusteringEngine.getId();
-        this.parser = new WFCParser(getClusteringEngine().getWorkflowEngine().getSchedulerId(0));
+        this.parser = new YamlUtil(getClusteringEngine().getWorkflowEngine().getSchedulerId(0));
 
     }
 
@@ -101,7 +101,7 @@ public final class WFCPlanner extends SimEntity {
      *
      * @return the workflow parser
      */
-    public WFCParser getWorkflowParser() {
+    public YamlUtil getWorkflowParser() {
         return this.parser;
     }
 
@@ -140,6 +140,7 @@ public final class WFCPlanner extends SimEntity {
                 setTaskList(getWorkflowParser().getTaskList());
                 processPlanning();
                 processImpactFactors(getTaskList());
+
                 sendNow(getClusteringEngineId(), WorkflowSimTags.JOB_SUBMIT, getTaskList());
                 break;
             case CloudSimTags.END_OF_SIMULATION:

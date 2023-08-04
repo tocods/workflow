@@ -19,7 +19,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import org.cloudbus.cloudsim.Cloudlet;
-import org.cloudbus.cloudsim.container.core.ContainerVm;
+import org.cloudbus.cloudsim.container.core.ContainerPod;
 import org.workflowsim.WorkflowSimTags;
 
 /**
@@ -45,9 +45,9 @@ public class RoundRobinSchedulingAlgorithm extends BaseSchedulingAlgorithm {
         for (int j = 0; j < size; j++) {
             Cloudlet cloudlet = (Cloudlet) getCloudletList().get(j);
             int vmSize = vmList.size();
-            ContainerVm firstIdleVm = null;//(CondorVM)getVmList().get(0);
+            ContainerPod firstIdleVm = null;//(CondorPod)getVmList().get(0);
             for (int l = 0; l < vmSize; l++) {
-                ContainerVm vm = (ContainerVm) vmList.get(l);
+                ContainerPod vm = (ContainerPod) vmList.get(l);
                 if (vm.getState() == WorkflowSimTags.VM_STATUS_IDLE) {
                     firstIdleVm = vm;
                     break;
@@ -56,7 +56,7 @@ public class RoundRobinSchedulingAlgorithm extends BaseSchedulingAlgorithm {
             if (firstIdleVm == null) {
                 break;
             }
-            ((ContainerVm) firstIdleVm).setState(WorkflowSimTags.VM_STATUS_BUSY);
+            ((ContainerPod) firstIdleVm).setState(WorkflowSimTags.VM_STATUS_BUSY);
             cloudlet.setVmId(firstIdleVm.getId());
             getScheduledList().add(cloudlet);
             vmIndex = (vmIndex + 1) % vmList.size();
@@ -65,9 +65,9 @@ public class RoundRobinSchedulingAlgorithm extends BaseSchedulingAlgorithm {
     /**
      * Sort it based on vm index
      */
-    public class VmListComparator implements Comparator<ContainerVm>{
+    public class VmListComparator implements Comparator<ContainerPod>{
         @Override
-        public int compare(ContainerVm v1, ContainerVm v2){
+        public int compare(ContainerPod v1, ContainerPod v2){
             return Integer.compare(v1.getId(), v2.getId());
         }
     }

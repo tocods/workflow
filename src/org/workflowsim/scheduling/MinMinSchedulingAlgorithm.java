@@ -73,9 +73,9 @@ public class MinMinSchedulingAlgorithm extends BaseSchedulingAlgorithm {
             hasChecked.set(minIndex, true);
 
             int vmSize = getVmList().size();
-            ContainerVm firstIdleVm = null;//(CondorVM)getVmList().get(0);
+            ContainerPod firstIdleVm = null;//(CondorPod)getVmList().get(0);
             for (int j = 0; j < vmSize; j++) {
-                ContainerVm vm = (ContainerVm) getVmList().get(j);
+                ContainerPod vm = (ContainerPod) getVmList().get(j);
                 if (vm.getState() == WorkflowSimTags.VM_STATUS_IDLE) {
                     firstIdleVm = vm;
                     break;
@@ -85,7 +85,7 @@ public class MinMinSchedulingAlgorithm extends BaseSchedulingAlgorithm {
                 break;
             }
             for (int j = 0; j < vmSize; j++) {
-                ContainerVm vm = (ContainerVm) getVmList().get(j);
+                ContainerPod vm = (ContainerPod) getVmList().get(j);
                 if ((vm.getState() == WorkflowSimTags.VM_STATUS_IDLE)
                         && vm.getCurrentRequestedTotalMips() > firstIdleVm.getCurrentRequestedTotalMips()) {
                     firstIdleVm = vm;

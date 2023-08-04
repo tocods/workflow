@@ -11,7 +11,7 @@ package org.cloudbus.cloudsim.provisioners;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.cloudbus.cloudsim.Vm;
+import org.cloudbus.cloudsim.Pod;
 
 /**
  * RamProvisionerSimple is an extension of {@link RamProvisioner} which uses a best-effort policy to
@@ -39,43 +39,43 @@ public class RamProvisionerSimple extends RamProvisioner {
 	}
 
 	@Override
-	public boolean allocateRamForVm(Vm vm, int ram) {
-		int maxRam = vm.getRam();
+	public boolean allocateRamForVm(Pod pod, int ram) {
+		int maxRam = pod.getRam();
                 /* If the requested amount of RAM to be allocated to the VM is greater than
                 the amount of VM is in fact requiring, allocate only the
-                amount defined in the Vm requirements.*/
+                amount defined in the Pod requirements.*/
 		if (ram >= maxRam) {
 			ram = maxRam;
 		}
 
-		deallocateRamForVm(vm);
+		deallocateRamForVm(pod);
 
 		if (getAvailableRam() >= ram) {
 			setAvailableRam(getAvailableRam() - ram);
-			getRamTable().put(vm.getUid(), ram);
-			vm.setCurrentAllocatedRam(getAllocatedRamForVm(vm));
+			getRamTable().put(pod.getUid(), ram);
+			pod.setCurrentAllocatedRam(getAllocatedRamForVm(pod));
 			return true;
 		}
 
-		vm.setCurrentAllocatedRam(getAllocatedRamForVm(vm));
+		pod.setCurrentAllocatedRam(getAllocatedRamForVm(pod));
 
 		return false;
 	}
 
 	@Override
-	public int getAllocatedRamForVm(Vm vm) {
-		if (getRamTable().containsKey(vm.getUid())) {
-			return getRamTable().get(vm.getUid());
+	public int getAllocatedRamForVm(Pod pod) {
+		if (getRamTable().containsKey(pod.getUid())) {
+			return getRamTable().get(pod.getUid());
 		}
 		return 0;
 	}
 
 	@Override
-	public void deallocateRamForVm(Vm vm) {
-		if (getRamTable().containsKey(vm.getUid())) {
-			int amountFreed = getRamTable().remove(vm.getUid());
+	public void deallocateRamForVm(Pod pod) {
+		if (getRamTable().containsKey(pod.getUid())) {
+			int amountFreed = getRamTable().remove(pod.getUid());
 			setAvailableRam(getAvailableRam() + amountFreed);
-			vm.setCurrentAllocatedRam(0);
+			pod.setCurrentAllocatedRam(0);
 		}
 	}
 
@@ -86,12 +86,12 @@ public class RamProvisionerSimple extends RamProvisioner {
 	}
 
 	@Override
-	public boolean isSuitableForVm(Vm vm, int ram) {
-		int allocatedRam = getAllocatedRamForVm(vm);
-		boolean result = allocateRamForVm(vm, ram);
-		deallocateRamForVm(vm);
+	public boolean isSuitableForVm(Pod pod, int ram) {
+		int allocatedRam = getAllocatedRamForVm(pod);
+		boolean result = allocateRamForVm(pod, ram);
+		deallocateRamForVm(pod);
 		if (allocatedRam > 0) {
-			allocateRamForVm(vm, allocatedRam);
+			allocateRamForVm(pod, allocatedRam);
 		}
 		return result;
 	}

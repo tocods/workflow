@@ -17,8 +17,8 @@ package org.workflowsim.planning;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.cloudbus.cloudsim.Vm;
-import org.cloudbus.cloudsim.container.core.ContainerVm;
+
+import org.cloudbus.cloudsim.container.core.ContainerPod;
 import org.workflowsim.FileItem;
 import org.workflowsim.Task;
 import org.workflowsim.utils.Parameters;
@@ -43,7 +43,7 @@ public class DHEFTPlanningAlgorithm extends BasePlanningAlgorithm {
     @Override
     public void run() {
 
-        List<ContainerVm> vmList = getVmList();
+        List<ContainerPod> vmList = getVmList();
         double [][] bandwidths = new double[vmList.size()][vmList.size()];
         
         for(int i = 0; i < vmList.size(); i++){
@@ -52,7 +52,7 @@ public class DHEFTPlanningAlgorithm extends BasePlanningAlgorithm {
             }
         }
         for (Object vmObject : getVmList()) {
-            ContainerVm vm =  (ContainerVm)vmObject;
+            ContainerPod vm =  (ContainerPod)vmObject;
             vm.getBw();
         }
         
@@ -105,7 +105,7 @@ public class DHEFTPlanningAlgorithm extends BasePlanningAlgorithm {
                 int minTimeIndex = 0;
                 
                 for(int vmIndex = 0; vmIndex < getVmList().size(); vmIndex++){
-                    ContainerVm vm = (ContainerVm)getVmList().get(vmIndex);
+                    ContainerPod vm = (ContainerPod)getVmList().get(vmIndex);
                     double startTime = availableTime[vm.getId()];
                     parentIndex = 0;
                     for(Task parent: task.getParentList()){

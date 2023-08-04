@@ -18,8 +18,7 @@ package org.workflowsim.scheduling;
 import java.util.ArrayList;
 import java.util.List;
 import org.cloudbus.cloudsim.Cloudlet;
-import org.cloudbus.cloudsim.Vm;
-import org.cloudbus.cloudsim.container.core.ContainerVm;
+import org.cloudbus.cloudsim.container.core.ContainerPod;
 
 /**
  * The base scheduler has implemented the basic features. Every other scheduling method
@@ -38,7 +37,7 @@ public abstract class BaseSchedulingAlgorithm implements SchedulingAlgorithmInte
     /**
      * the vm list.
      */
-    private List<? extends ContainerVm> vmList;
+    private List<? extends ContainerPod> vmList;
     /**
      * the scheduled job list.
      */

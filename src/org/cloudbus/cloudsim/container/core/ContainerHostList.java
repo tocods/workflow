@@ -1,7 +1,7 @@
 package org.cloudbus.cloudsim.container.core;
 
 
-import org.cloudbus.cloudsim.container.lists.ContainerVmPeList;
+import org.cloudbus.cloudsim.container.lists.ContainerPodPeList;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -61,7 +61,7 @@ public class ContainerHostList {
     public static <T extends ContainerHost> int getNumberOfFreePes(List<T> hostList) {
         int numberOfFreePes = 0;
         for (T host : hostList) {
-            numberOfFreePes += ContainerVmPeList.getNumberOfFreePes(host.getPeList());
+            numberOfFreePes += ContainerPodPeList.getNumberOfFreePes(host.getPeList());
         }
         return numberOfFreePes;
     }
@@ -78,7 +78,7 @@ public class ContainerHostList {
     public static <T extends ContainerHost> int getNumberOfBusyPes(List<T> hostList) {
         int numberOfBusyPes = 0;
         for (T host : hostList) {
-            numberOfBusyPes += ContainerVmPeList.getNumberOfBusyPes(host.getPeList());
+            numberOfBusyPes += ContainerPodPeList.getNumberOfBusyPes(host.getPeList());
         }
         return numberOfBusyPes;
     }
@@ -108,7 +108,7 @@ public class ContainerHostList {
      */
     public static <T extends ContainerHost> T getHostWithFreePe(List<T> hostList, int pesNumber) {
         for (T host : hostList) {
-            if (ContainerVmPeList.getNumberOfFreePes(host.getPeList()) >= pesNumber) {
+            if (ContainerPodPeList.getNumberOfFreePes(host.getPeList()) >= pesNumber) {
                 return host;
             }
         }

@@ -1,6 +1,6 @@
 package org.cloudbus.cloudsim.container.containerPlacementPolicies;
 
-import org.cloudbus.cloudsim.container.core.ContainerVm;
+import org.cloudbus.cloudsim.container.core.ContainerPod;
 
 import java.util.List;
 import java.util.Set;
@@ -12,17 +12,17 @@ import java.util.Set;
 public class ContainerPlacementPolicyLeastFull extends ContainerPlacementPolicy{
 
     @Override
-    public ContainerVm getContainerVm(List<ContainerVm> vmList, Object obj, Set<? extends ContainerVm> excludedVmList) {
-        ContainerVm selectedVm = null;
+    public ContainerPod getContainerVm(List<ContainerPod> vmList, Object obj, Set<? extends ContainerPod> excludedVmList) {
+        ContainerPod selectedVm = null;
         double minMips = Double.MAX_VALUE;
-        for (ContainerVm containerVm1 : vmList) {
-            if (excludedVmList.contains(containerVm1)) {
+        for (ContainerPod containerPod1 : vmList) {
+            if (excludedVmList.contains(containerPod1)) {
                 continue;
             }
-            double containerUsage = containerVm1.getContainerScheduler().getAvailableMips();
+            double containerUsage = containerPod1.getContainerScheduler().getAvailableMips();
             if ( containerUsage < minMips ) {
                 minMips = containerUsage;
-                selectedVm = containerVm1;
+                selectedVm = containerPod1;
 
             }
            }

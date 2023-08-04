@@ -1,7 +1,7 @@
 package org.cloudbus.cloudsim.container.containerPlacementPolicies;
 
 
-import org.cloudbus.cloudsim.container.core.ContainerVm;
+import org.cloudbus.cloudsim.container.core.ContainerPod;
 
 import java.util.List;
 import java.util.Set;
@@ -14,16 +14,16 @@ import java.util.Set;
 public class ContainerPlacementPolicyFirstFit extends ContainerPlacementPolicy {
 
     @Override
-    public ContainerVm getContainerVm(List<ContainerVm> vmList, Object obj, Set<? extends ContainerVm> excludedVmList) {
-        ContainerVm containerVm = null;
-        for (ContainerVm containerVm1 : vmList) {
-            if (excludedVmList.contains(containerVm1)) {
+    public ContainerPod getContainerVm(List<ContainerPod> vmList, Object obj, Set<? extends ContainerPod> excludedVmList) {
+        ContainerPod containerPod = null;
+        for (ContainerPod containerPod1 : vmList) {
+            if (excludedVmList.contains(containerPod1)) {
                 continue;
             }
-            containerVm = containerVm1;
+            containerPod = containerPod1;
             break;
         }
-        return containerVm;
+        return containerPod;
     }
 
 }

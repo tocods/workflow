@@ -17,16 +17,9 @@ package org.workflowsim;
 
 import java.util.Iterator;
 import java.util.List;
-import org.cloudbus.cloudsim.Cloudlet;
-import org.cloudbus.cloudsim.CloudletScheduler;
-import org.cloudbus.cloudsim.Consts;
-import org.cloudbus.cloudsim.Datacenter;
-import org.cloudbus.cloudsim.DatacenterCharacteristics;
-import org.cloudbus.cloudsim.Host;
-import org.cloudbus.cloudsim.Log;
-import org.cloudbus.cloudsim.Storage;
-import org.cloudbus.cloudsim.Vm;
-import org.cloudbus.cloudsim.VmAllocationPolicy;
+
+import org.cloudbus.cloudsim.*;
+import org.cloudbus.cloudsim.Pod;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.core.CloudSimTags;
 import org.cloudbus.cloudsim.core.SimEvent;
@@ -36,7 +29,7 @@ import org.workflowsim.utils.Parameters.ClassType;
 import org.workflowsim.utils.Parameters.FileType;
 
 /**
- * WorkflowDatacenter extends Datacenter so as we can use CondorVM and other
+ * WorkflowDatacenter extends Datacenter so as we can use CondorPod and other
  * components
  *
  * @author Arman Riazi
@@ -47,10 +40,10 @@ public class WorkflowDatacenter extends Datacenter {
 
     public WorkflowDatacenter(String name,
             DatacenterCharacteristics characteristics,
-            VmAllocationPolicy vmAllocationPolicy,
+            PodAllocationPolicy podAllocationPolicy,
             List<Storage> storageList,
             double schedulingInterval) throws Exception {
-        super(name, characteristics, vmAllocationPolicy, storageList, schedulingInterval);
+        super(name, characteristics, podAllocationPolicy, storageList, schedulingInterval);
     }
 
     /**
@@ -103,7 +96,7 @@ public class WorkflowDatacenter extends Datacenter {
             int userId = job.getUserId();
             int vmId = job.getVmId();
             Host host = getVmAllocationPolicy().getHost(vmId, userId);
-            CondorVM vm = (CondorVM) host.getVm(vmId, userId);
+            CondorPod vm = (CondorPod) host.getVm(vmId, userId);
 
             switch (Parameters.getCostModel()) {
                 case DATACENTER:
@@ -166,13 +159,13 @@ public class WorkflowDatacenter extends Datacenter {
      * Update the submission time/exec time of a job
      *
      * @param job
-     * @param vm
+     * @param pod
      */
-    private void updateTaskExecTime(Job job, Vm vm) {
+    private void updateTaskExecTime(Job job, Pod pod) {
         double start_time = job.getExecStartTime();
         for (Task task : job.getTaskList()) {
             task.setExecStartTime(start_time);
-            double task_runtime = task.getCloudletLength() / vm.getMips();
+            double task_runtime = task.getCloudletLength() / pod.getMips();
             start_time += task_runtime;
             //Because CloudSim would not let us update end time here
             task.setTaskFinishTime(start_time);
@@ -255,7 +248,7 @@ public class WorkflowDatacenter extends Datacenter {
                         int vmId = job.getVmId();
                         int userId = job.getUserId();
                         Host host = getVmAllocationPolicy().getHost(vmId, userId);
-                        Vm vm = host.getVm(vmId, userId);
+                        Pod pod = host.getVm(vmId, userId);
 
                         boolean requiredFileStagein = true;
                         for (Iterator it = siteList.iterator(); it.hasNext();) {
@@ -265,7 +258,7 @@ public class WorkflowDatacenter extends Datacenter {
                                 continue;
                             }
                             /**
-                             * This file is already in the local vm and thus it
+                             * This file is already in the local pod and thus it
                              * is no need to transfer
                              */
                             if (site.equals(Integer.toString(vmId))) {
@@ -275,11 +268,11 @@ public class WorkflowDatacenter extends Datacenter {
                             double bwth;
                             if (site.equals(Parameters.SOURCE)) {
                                 //transfers from the source to the VM is limited to the VM bw only
-                                bwth = vm.getBw();
+                                bwth = pod.getBw();
                                 //bwth = dcStorage.getBaseBandwidth();
                             } else {
                                 //transfers between two VMs is limited to both VMs
-                                bwth = Math.min(vm.getBw(), getVmAllocationPolicy().getHost(Integer.parseInt(site), userId).getVm(Integer.parseInt(site), userId).getBw());
+                                bwth = Math.min(pod.getBw(), getVmAllocationPolicy().getHost(Integer.parseInt(site), userId).getVm(Integer.parseInt(site), userId).getBw());
                                 //bwth = dcStorage.getBandwidth(Integer.parseInt(site), vmId);
                             }
                             if (bwth > maxBwth) {
@@ -345,9 +338,9 @@ public class WorkflowDatacenter extends Datacenter {
     protected void checkCloudletCompletion() {
         List<? extends Host> list = getVmAllocationPolicy().getHostList();
         for (Host host : list) {
-            for (Vm vm : host.getVmList()) {
-                while (vm.getCloudletScheduler().isFinishedCloudlets()) {
-                    Cloudlet cl = vm.getCloudletScheduler().getNextFinishedCloudlet();
+            for (Pod pod : host.getVmList()) {
+                while (pod.getCloudletScheduler().isFinishedCloudlets()) {
+                    Cloudlet cl = pod.getCloudletScheduler().getNextFinishedCloudlet();
                     if (cl != null) {
                         sendNow(cl.getUserId(), CloudSimTags.CLOUDLET_RETURN, cl);
                         register(cl);
@@ -381,7 +374,7 @@ public class WorkflowDatacenter extends Datacenter {
                         /**
                          * Left here for future work
                          */
-                        CondorVM vm = (CondorVM) host.getVm(vmId, userId);
+                        CondorPod vm = (CondorPod) host.getVm(vmId, userId);
                         WFCReplicaCatalog.addFileToStorage(file.getName(), Integer.toString(vmId));
                         break;
                 }

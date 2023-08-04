@@ -24,25 +24,16 @@ import org.cloudbus.cloudsim.container.hostSelectionPolicies.*;
 import org.cloudbus.cloudsim.container.resourceAllocatorMigrationEnabled.*;
 import org.cloudbus.cloudsim.container.schedulers.*;
 import org.cloudbus.cloudsim.container.utils.IDs;
-import org.cloudbus.cloudsim.container.vmSelectionPolicies.*;
+import org.cloudbus.cloudsim.container.podSelectionPolicies.*;
 import org.cloudbus.cloudsim.Cloudlet;
-import org.cloudbus.cloudsim.CloudletSchedulerSpaceShared;
-import org.cloudbus.cloudsim.DatacenterCharacteristics;
 import org.cloudbus.cloudsim.HarddriveStorage;
-import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.Log;
-import org.cloudbus.cloudsim.Pe;
 import org.cloudbus.cloudsim.Storage;
-import org.cloudbus.cloudsim.*;
-import org.cloudbus.cloudsim.container.core.*;
 import org.cloudbus.cloudsim.container.resourceAllocators.*;
 import org.cloudbus.cloudsim.container.containerProvisioners.*;
-import org.cloudbus.cloudsim.container.containerVmProvisioners.*;
+import org.cloudbus.cloudsim.container.containerPodProvisioners.*;
 import org.cloudbus.cloudsim.core.CloudSim;
-import org.cloudbus.cloudsim.provisioners.*;
-import org.workflowsim.CondorVM;
 import org.workflowsim.Task;
-import org.workflowsim.WorkflowDatacenter;
 import org.workflowsim.Job;
 import org.workflowsim.WFCEngine;
 import org.workflowsim.WFCPlanner;
@@ -61,10 +52,10 @@ import org.workflowsim.utils.Parameters.ClassType;
 /*
 ConstantsExamples.WFC_DC_SCHEDULING_INTERVAL+ 0.1D
 
-On Vm (
-    Allocation= PowerContainerVmAllocationPolicyMigrationAbstractHostSelection
-    Scheduler = ContainerVmSchedulerTimeSharedOverSubscription    
-    SelectionPolicy = PowerContainerVmSelectionPolicyMaximumUsage
+On Pod (
+    Allocation= PowerContainerPodAllocationPolicyMigrationAbstractHostSelection
+    Scheduler = ContainerPodSchedulerTimeSharedOverSubscription
+    SelectionPolicy = PowerContainerPodSelectionPolicyMaximumUsage
     Pe = CotainerPeProvisionerSimple
     Overhead = 0
     ClusteringMethod.NONE
@@ -74,7 +65,7 @@ On Vm (
 )
 
 On Host (
-    Scheduler = ContainerVmSchedulerTimeSharedOverSubscription    
+    Scheduler = ContainerPodSchedulerTimeSharedOverSubscription
     SelectionPolicy = HostSelectionPolicyFirstFit
     Pe = PeProvisionerSimple 
 )
@@ -94,7 +85,8 @@ public class WFCExample {
     private static boolean failure_flag = false;   
     private static List<Container> containerList;       
     private static List<ContainerHost> hostList;    
-    public static List<? extends ContainerVm> vmList;    
+    public static List<? extends ContainerPod> vmList;
+    public static List<String> ids;
     
     public static void main(String[] args) {
         try {                                                
@@ -113,7 +105,7 @@ public class WFCExample {
             Log.printLine("Starting " + experimentName + " ... ");
                         
             String daxPath = "./config/dax/Montage_" + (WFCConstants.WFC_NUMBER_CLOUDLETS - 1) + ".xml";
-            
+
             File daxFile = new File(daxPath);
             if (!daxFile.exists()) {
                 Log.printLine("Warning: Please replace daxPath with the physical path in your working environment!");
@@ -151,7 +143,7 @@ public class WFCExample {
                        100, 1.0, 30, 300, 0.78);
             }
             
-            Parameters.SchedulingAlgorithm sch_method = Parameters.SchedulingAlgorithm.MINMIN;//local
+            Parameters.SchedulingAlgorithm sch_method = Parameters.SchedulingAlgorithm.MAXMIN;//local
             Parameters.PlanningAlgorithm pln_method = Parameters.PlanningAlgorithm.INVALID;//global-stage
             WFCReplicaCatalog.FileSystem file_system = WFCReplicaCatalog.FileSystem.LOCAL;
 
@@ -182,20 +174,21 @@ public class WFCExample {
             CloudSim.init(num_user, calendar, trace_flag);
 
 
-            PowerContainerAllocationPolicy containerAllocationPolicy = new PowerContainerAllocationPolicySimple();
-            PowerContainerVmSelectionPolicy vmSelectionPolicy = new PowerContainerVmSelectionPolicyMaximumUsage();
+            PowerContainerAllocationPolicy containerAllocationPolicy = new PodContainerAllocationPolicy();
+            PowerContainerPodSelectionPolicy podSelectionPolicy = new PowerContainerPodSelectionPolicyMaximumUsage();
             HostSelectionPolicy hostSelectionPolicy = new HostSelectionPolicyFirstFit();
 
-            String logAddress = "~/Results";
+            String logAddress = "D:/asResults";
                        
             hostList = new ArrayList<ContainerHost>();
             hostList = createHostList(WFCConstants.WFC_NUMBER_HOSTS);
             //cloudletList = new ArrayList<ContainerCloudlet>();
             containerList= new ArrayList<Container>();        
-            //vmList = new ArrayList<ContainerVm>();
+            //podList = new ArrayList<ContainerPod>();
+            ids = new ArrayList<>();
             
-            ContainerVmAllocationPolicy vmAllocationPolicy = new
-                    PowerContainerVmAllocationPolicyMigrationAbstractHostSelection(hostList, vmSelectionPolicy,
+            ContainerPodAllocationPolicy vmAllocationPolicy = new
+                    PowerContainerPodAllocationPolicyMigrationAbstractHostSelection(hostList, podSelectionPolicy,
                     hostSelectionPolicy, WFCConstants.WFC_CONTAINER_OVER_UTILIZATION_THRESHOLD, WFCConstants.WFC_CONTAINER_UNDER_UTILIZATION_THRESHOLD);        
             
             WFCDatacenter datacenter = (WFCDatacenter) createDatacenter("datacenter_0",
@@ -208,7 +201,7 @@ public class WFCExample {
             WFCPlanner wfPlanner = new WFCPlanner("planner_0", 1);
                       
             WFCEngine wfEngine = wfPlanner.getWorkflowEngine();
-            //vmList = createVmList(wfEngine.getSchedulerId(0), Parameters.getVmNum());                        
+            //podList = createVmList(wfEngine.getSchedulerId(0), Parameters.getVmNum());
             //wfEngine.submitVmList(wfEngine.getVmList(), 0);                           
             wfEngine.bindSchedulerDatacenter(datacenter.getId(), 0);
             
@@ -234,7 +227,7 @@ public class WFCExample {
 
      public static WFCDatacenter createDatacenter(String name, Class<? extends WFCDatacenter> datacenterClass,
                                                        List<ContainerHost> hostList,
-                                                       ContainerVmAllocationPolicy vmAllocationPolicy,
+                                                       ContainerPodAllocationPolicy vmAllocationPolicy,
                                                        List<Container> containerList,
                                                        ContainerAllocationPolicy containerAllocationPolicy,                                                       
                                                        String experimentName, double schedulingInterval, String logAddress, double VMStartupDelay,
@@ -294,19 +287,19 @@ public class WFCExample {
         
          try {
             for (int i = 1; i <= WFCConstants.WFC_NUMBER_HOSTS; i++) {
-                ArrayList<ContainerVmPe> peList = new ArrayList<ContainerVmPe>();            
+                ArrayList<ContainerPodPe> peList = new ArrayList<ContainerPodPe>();
                 // 3. Create PEs and add these into the list.
                 //for a quad-core machine, a list of 4 PEs is required:
                 for (int p = 0; p < WFCConstants.WFC_NUMBER_HOST_PES; p++) {
-                  peList.add(new ContainerVmPe(p, new ContainerVmPeProvisionerSimple(WFCConstants.WFC_HOST_MIPS))); // need to store Pe id and MIPS Rating            
+                  peList.add(new ContainerPodPe(p, new ContainerPodPeProvisionerSimple(WFCConstants.WFC_HOST_MIPS))); // need to store Pe id and MIPS Rating
                 }
 
                 
                  hostList.add(new PowerContainerHostUtilizationHistory(IDs.pollId(ContainerHost.class) ,
-                        new ContainerVmRamProvisionerSimple(WFCConstants.WFC_HOST_RAM),
-                        new ContainerVmBwProvisionerSimple(WFCConstants.WFC_HOST_BW), WFCConstants.WFC_HOST_STORAGE , peList,
-                        new ContainerVmSchedulerTimeSharedOverSubscription(peList),
-                         //new ContainerVmSchedulerTimeShared(peList),
+                        new ContainerPodRamProvisionerSimple(WFCConstants.WFC_HOST_RAM),
+                        new ContainerPodBwProvisionerSimple(WFCConstants.WFC_HOST_BW), WFCConstants.WFC_HOST_STORAGE , peList,
+                        new ContainerPodSchedulerTimeSharedOverSubscription(peList),
+                         //new ContainerPodSchedulerTimeShared(peList),
                         WFCConstants.HOST_POWER[2]));
             }
           } catch (Exception e) {
@@ -357,6 +350,7 @@ public class WFCExample {
         LinkedList<Container> list = new LinkedList<>();        
         //peList.add(new ContainerPe(0, new CotainerPeProvisionerSimple((double)mips * ratio)));         
         //create VMs
+        Random r = new Random();
         try{
             Container[] containers = new Container[containersNumber];
             for (int i = 0; i < containersNumber; i++) {
@@ -366,7 +360,9 @@ public class WFCExample {
                         WFCConstants.WFC_CONTAINER_BW, WFCConstants.WFC_CONTAINER_SIZE, WFCConstants.WFC_CONTAINER_VMM,
                         //new ContainerCloudletSchedulerTimeShared(),WFCConstants.WFC_DC_SCHEDULING_INTERVAL);                    
                         new ContainerCloudletSchedulerDynamicWorkload(WFCConstants.WFC_CONTAINER_MIPS, WFCConstants.WFC_CONTAINER_PES_NUMBER),
-                        WFCConstants.WFC_DC_SCHEDULING_INTERVAL);                    
+                        WFCConstants.WFC_DC_SCHEDULING_INTERVAL);
+                containers[i].setPodId(ids.get(r.nextInt(WFCConstants.WFC_NUMBER_VMS)));
+                //Log.printLine("container " + containers[i].getUid() + "is belong to " + containers[i].getPodId());
                 list.add(containers[i]);
             }
         } catch (Exception e) {
@@ -379,9 +375,9 @@ public class WFCExample {
        }
     
     
-      public static List<ContainerVm> createVmList(int brokerId, int containerVmsNumber) {
+      public static List<ContainerPod> createVmList(int brokerId, int containerVmsNumber) {
         //Creates a container to store VMs. This list is passed to the broker later
-        LinkedList<ContainerVm> list = new LinkedList<>();
+        LinkedList<ContainerPod> list = new LinkedList<>();
         ArrayList peList = new ArrayList();
        
         try{
@@ -389,10 +385,10 @@ public class WFCExample {
               peList.add(new ContainerPe(p, new CotainerPeProvisionerSimple((double)WFCConstants.WFC_VM_MIPS * WFCConstants.WFC_VM_RATIO)));         
             }
            //create VMs
-           ContainerVm[] vm = new ContainerVm[containerVmsNumber];
+           ContainerPod[] vm = new ContainerPod[containerVmsNumber];
 
            for (int i = 0; i < containerVmsNumber; i++) {           
-               vm[i] = new PowerContainerVm(IDs.pollId(ContainerVm.class), brokerId, WFCConstants.WFC_VM_MIPS, (float)WFCConstants.WFC_VM_RAM,
+               vm[i] = new PowerContainerPod(IDs.pollId(ContainerPod.class), brokerId, WFCConstants.WFC_VM_MIPS, (float)WFCConstants.WFC_VM_RAM,
                         WFCConstants.WFC_VM_BW, WFCConstants.WFC_VM_SIZE,  WFCConstants.WFC_VM_VMM,
                        new ContainerSchedulerTimeSharedOverSubscription(peList),
                        //new ContainerSchedulerTimeSharedOverSubscription(peList),
@@ -400,12 +396,13 @@ public class WFCExample {
                        new ContainerBwProvisionerSimple(WFCConstants.WFC_VM_BW), peList,
                        WFCConstants.WFC_DC_SCHEDULING_INTERVAL);
 
-                       /*new ContainerVm(IDs.pollId(ContainerVm.class), brokerId, (double) mips, (float) ram,
+                       /*new ContainerPod(IDs.pollId(ContainerPod.class), brokerId, (double) mips, (float) ram,
                        bw, size, "Xen", new ContainerSchedulerTimeShared(peList),
                        new ContainerRamProvisionerSimple(ram),
                        new ContainerBwProvisionerSimple(bw), peList);*/
 
-                       //new ContainerVm(i, userId, mips * ratio, pesNumber, ram, bw, size, vmm, new CloudletSchedulerSpaceShared());
+                       //new ContainerPod(i, userId, mips * ratio, pesNumber, ram, bw, size, vmm, new CloudletSchedulerSpaceShared());
+               ids.add(vm[i].getUid());
                list.add(vm[i]);
            }
         } catch (Exception e) {
@@ -452,14 +449,14 @@ public class WFCExample {
             }
             for (Task task : job.getTaskList()) {                
                
-              Log.print(task.getCloudletId()+ " ,");
+              Log.print("B" + task.getCloudletId()+ " B,");
               Log.print(task.getCloudletLength()+ " ,");               
               Log.print(task.getType());                                            
               //Log.print(dft0.format(task.getImpact()));
               
-              Log.print("\n"+"\t\t\t ("+dft0.format(task.getActualCPUTime())+ " ,");      
+              /*Log.print("\n"+"\t\t\t ("+dft0.format(task.getActualCPUTime())+ " ,");
               Log.print("\n"+"\t\t\t"+dft0.format(task.getExecStartTime())+ " ,");      
-              Log.print("\n"+"\t\t\t"+dft0.format(task.getTaskFinishTime())+ " )");      
+              Log.print("\n"+"\t\t\t"+dft0.format(task.getTaskFinishTime())+ " )");     */
              
             }
             Log.print(indent);
@@ -475,7 +472,7 @@ public class WFCExample {
                 Log.printLine(indent + indent +indent + job.getResourceId() 
                         //+ indent + indent  + indent + indent + datacenter.getVmAllocationPolicy().getHost(job.getVmId(), job.getUserId()).getId()
                         + indent + indent + indent + job.getVmId()
-                        + indent + indent + indent + job.getContainerId()
+                        + indent + indent + indent + "C" + job.getContainerId() + "C"
                         + indent + indent + indent + dft.format(job.getActualCPUTime())
                         + indent + indent + indent + dft.format(job.getExecStartTime()) + indent + indent + indent
                         + dft.format(job.getFinishTime()) + indent + indent + indent + job.getDepth()
@@ -569,7 +566,7 @@ public class WFCExample {
 /*
     public static WFCDatacenter createDatacenter(String name, Class<? extends WFCDatacenter> datacenterClass,
                                                        List<ContainerHost> hostList,
-                                                       ContainerVmAllocationPolicy vmAllocationPolicy,
+                                                       ContainerPodAllocationPolicy vmAllocationPolicy,
                                                        List<Container> containerList,
                                                        ContainerAllocationPolicy containerAllocationPolicy,
                                                        LinkedList<Storage> storageList,
@@ -611,17 +608,17 @@ public class WFCExample {
         for (int i = 0; i < hostsNumber; ++i) {
             
             int hostType = i / (int) Math.ceil((double) hostsNumber / 3.0D);
-            ArrayList<ContainerVmPe> peList = new ArrayList<ContainerVmPe>();
+            ArrayList<ContainerPodPe> peList = new ArrayList<ContainerPodPe>();
             
             for (int j = 0; j < WFCConstants.HOST_PES[hostType]; ++j) {
-                peList.add(new ContainerVmPe(j,
-                        new ContainerVmPeProvisionerSimple((double) WFCConstants.HOST_MIPS[hostType])));
+                peList.add(new ContainerPodPe(j,
+                        new ContainerPodPeProvisionerSimple((double) WFCConstants.HOST_MIPS[hostType])));
             }
 
             hostList.add(new PowerContainerHostUtilizationHistory(IDs.pollId(ContainerHost.class)  ,
-                    new ContainerVmRamProvisionerSimple(WFCConstants.HOST_RAM[hostType]),
-                    new ContainerVmBwProvisionerSimple(WFCConstants.HOST_BW), WFCConstants.HOST_STORAGE , peList,
-                    new ContainerVmSchedulerTimeSharedOverSubscription(peList),
+                    new ContainerPodRamProvisionerSimple(WFCConstants.HOST_RAM[hostType]),
+                    new ContainerPodBwProvisionerSimple(WFCConstants.HOST_BW), WFCConstants.HOST_STORAGE , peList,
+                    new ContainerPodSchedulerTimeSharedOverSubscription(peList),
                     WFCConstants.HOST_POWER[hostType]));
         }
 
@@ -636,8 +633,8 @@ public class WFCExample {
      * @param containerVmsNumber
      */
         /*
-    public static ArrayList<ContainerVm> createVmList0(int brokerId, int containerVmsNumber) {
-        ArrayList<ContainerVm> containerVms = new ArrayList<ContainerVm>();
+    public static ArrayList<ContainerPod> createVmList0(int brokerId, int containerVmsNumber) {
+        ArrayList<ContainerPod> containerVms = new ArrayList<ContainerPod>();
 
         for (int i = 0; i < containerVmsNumber; ++i) {
             ArrayList<ContainerPe> peList = new ArrayList<ContainerPe>();
@@ -646,7 +643,7 @@ public class WFCExample {
                 peList.add(new ContainerPe(j,
                         new CotainerPeProvisionerSimple((double) WFCConstants.VM_MIPS[vmType])));
             }
-            containerVms.add(new PowerContainerVm(IDs.pollId(ContainerVm.class), brokerId,
+            containerVms.add(new PowerContainerPod(IDs.pollId(ContainerPod.class), brokerId,
                     (double) WFCConstants.VM_MIPS[vmType], (float) WFCConstants.VM_RAM[vmType],
                     WFCConstants.VM_BW, WFCConstants.VM_SIZE, "Xen",
                     new ContainerSchedulerTimeSharedOverSubscription(peList),

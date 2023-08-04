@@ -16,20 +16,8 @@ import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.cloudbus.cloudsim.Cloudlet;
-import org.cloudbus.cloudsim.CloudletSchedulerTimeShared;
-import org.cloudbus.cloudsim.Datacenter;
-import org.cloudbus.cloudsim.DatacenterBroker;
-import org.cloudbus.cloudsim.DatacenterCharacteristics;
-import org.cloudbus.cloudsim.Host;
-import org.cloudbus.cloudsim.Log;
-import org.cloudbus.cloudsim.Pe;
-import org.cloudbus.cloudsim.Storage;
-import org.cloudbus.cloudsim.UtilizationModel;
-import org.cloudbus.cloudsim.UtilizationModelFull;
-import org.cloudbus.cloudsim.Vm;
-import org.cloudbus.cloudsim.VmAllocationPolicySimple;
-import org.cloudbus.cloudsim.VmSchedulerTimeShared;
+import org.cloudbus.cloudsim.*;
+import org.cloudbus.cloudsim.Pod;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.provisioners.BwProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.PeProvisionerSimple;
@@ -46,26 +34,26 @@ public class CloudSimExample7 {
 	private static List<Cloudlet> cloudletList;
 
 	/** The vmlist. */
-	private static List<Vm> vmlist;
+	private static List<Pod> vmlist;
 
-	private static List<Vm> createVM(int userId, int vms, int idShift) {
+	private static List<Pod> createVM(int userId, int vms, int idShift) {
 		//Creates a container to store VMs. This list is passed to the broker later
-		LinkedList<Vm> list = new LinkedList<Vm>();
+		LinkedList<Pod> list = new LinkedList<Pod>();
 
 		//VM Parameters
 		long size = 10000; //image size (MB)
-		int ram = 512; //vm memory (MB)
+		int ram = 512; //pod memory (MB)
 		int mips = 250;
 		long bw = 1000;
 		int pesNumber = 1; //number of cpus
 		String vmm = "Xen"; //VMM name
 
 		//create VMs
-		Vm[] vm = new Vm[vms];
+		Pod[] pod = new Pod[vms];
 
 		for(int i=0;i<vms;i++){
-			vm[i] = new Vm(idShift + i, userId, mips, pesNumber, ram, bw, size, vmm, new CloudletSchedulerTimeShared());
-			list.add(vm[i]);
+			pod[i] = new Pod(idShift + i, userId, mips, pesNumber, ram, bw, size, vmm, new CloudletSchedulerTimeShared());
+			list.add(pod[i]);
 		}
 
 		return list;
@@ -232,7 +220,7 @@ public class CloudSimExample7 {
     				new BwProvisionerSimple(bw),
     				storage,
     				peList1,
-    				new VmSchedulerTimeShared(peList1)
+    				new PodSchedulerTimeShared(peList1)
     			)
     		); // This is our first machine
 
@@ -245,7 +233,7 @@ public class CloudSimExample7 {
     				new BwProvisionerSimple(bw),
     				storage,
     				peList2,
-    				new VmSchedulerTimeShared(peList2)
+    				new PodSchedulerTimeShared(peList2)
     			)
     		); // Second machine
 
@@ -270,7 +258,7 @@ public class CloudSimExample7 {
 		// 6. Finally, we need to create a PowerDatacenter object.
 		Datacenter datacenter = null;
 		try {
-			datacenter = new Datacenter(name, characteristics, new VmAllocationPolicySimple(hostList), storageList, 0);
+			datacenter = new Datacenter(name, characteristics, new PodAllocationPolicySimple(hostList), storageList, 0);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

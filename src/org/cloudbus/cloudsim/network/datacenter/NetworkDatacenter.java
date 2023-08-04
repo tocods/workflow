@@ -13,15 +13,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.cloudbus.cloudsim.Cloudlet;
-import org.cloudbus.cloudsim.CloudletScheduler;
-import org.cloudbus.cloudsim.Datacenter;
-import org.cloudbus.cloudsim.DatacenterCharacteristics;
-import org.cloudbus.cloudsim.Host;
-import org.cloudbus.cloudsim.Log;
-import org.cloudbus.cloudsim.Storage;
-import org.cloudbus.cloudsim.Vm;
-import org.cloudbus.cloudsim.VmAllocationPolicy;
+import org.cloudbus.cloudsim.*;
+import org.cloudbus.cloudsim.Pod;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.core.CloudSimTags;
 import org.cloudbus.cloudsim.core.SimEvent;
@@ -32,7 +25,7 @@ import org.cloudbus.cloudsim.core.SimEvent;
  * deals with processing of VM queries (i.e., handling of VMs) instead of processing
  * Cloudlet-related queries. So, even though an AllocPolicy will be instantiated (in the init()
  * method of the superclass, it will not be used, as processing of cloudlets are handled by the
- * CloudletScheduler and processing of VirtualMachines are handled by the VmAllocationPolicy.
+ * CloudletScheduler and processing of VirtualMachines are handled by the PodAllocationPolicy.
  * 
  * @todo If an AllocPolicy is not being used, why it is being created. Perhaps 
  * a better class hierarchy should be created, introducing some abstract class
@@ -78,7 +71,7 @@ public class NetworkDatacenter extends Datacenter {
 	 * 
 	 * @param name the name to be associated with this entity (as required by {@link org.cloudbus.cloudsim.core.SimEntity})
 	 * @param characteristics the datacenter characteristics
-	 * @param vmAllocationPolicy the vmAllocationPolicy
+	 * @param podAllocationPolicy the podAllocationPolicy
 	 * @param storageList a List of storage elements, for data simulation
          * @param schedulingInterval the scheduling delay to process each datacenter received event
 	 * 
@@ -98,10 +91,10 @@ public class NetworkDatacenter extends Datacenter {
 	public NetworkDatacenter(
 			String name,
 			DatacenterCharacteristics characteristics,
-			VmAllocationPolicy vmAllocationPolicy,
+			PodAllocationPolicy podAllocationPolicy,
 			List<Storage> storageList,
 			double schedulingInterval) throws Exception {
-		super(name, characteristics, vmAllocationPolicy, storageList, schedulingInterval);
+		super(name, characteristics, podAllocationPolicy, storageList, schedulingInterval);
 		VmToSwitchid = new HashMap<Integer, Integer>();
 		HostToSwitchid = new HashMap<Integer, Integer>();
 		VmtoHostlist = new HashMap<Integer, Integer>();
@@ -130,22 +123,22 @@ public class NetworkDatacenter extends Datacenter {
 	 * Creates the given VM within the NetworkDatacenter. 
          * It can be directly accessed by Datacenter Broker which manages allocation of Cloudlets.
 	 * 
-         * @param vm
+         * @param pod
          * @return true if the VW was created successfully, false otherwise
 	 */
-	public boolean processVmCreateNetwork(Vm vm) {
+	public boolean processVmCreateNetwork(Pod pod) {
 
-		boolean result = getVmAllocationPolicy().allocateHostForVm(vm);
+		boolean result = getVmAllocationPolicy().allocateHostForVm(pod);
 
 		if (result) {
-			VmToSwitchid.put(vm.getId(), ((NetworkHost) vm.getHost()).sw.getId());
-			VmtoHostlist.put(vm.getId(), vm.getHost().getId());
-			System.out.println(vm.getId() + " VM is created on " + vm.getHost().getId());
+			VmToSwitchid.put(pod.getId(), ((NetworkHost) pod.getHost()).sw.getId());
+			VmtoHostlist.put(pod.getId(), pod.getHost().getId());
+			System.out.println(pod.getId() + " VM is created on " + pod.getHost().getId());
 
-			getVmList().add(vm);
+			getVmList().add(pod);
 
-			vm.updateVmProcessing(CloudSim.clock(), getVmAllocationPolicy().getHost(vm).getVmScheduler()
-					.getAllocatedMipsForVm(vm));
+			pod.updateVmProcessing(CloudSim.clock(), getVmAllocationPolicy().getHost(pod).getVmScheduler()
+					.getAllocatedMipsForVm(pod));
 		}
 		return result;
 	}
@@ -198,8 +191,8 @@ public class NetworkDatacenter extends Datacenter {
 			double fileTransferTime = predictFileTransferTime(cl.getRequiredFiles());
 
 			Host host = getVmAllocationPolicy().getHost(vmId, userId);
-			Vm vm = host.getVm(vmId, userId);
-			CloudletScheduler scheduler = vm.getCloudletScheduler();
+			Pod pod = host.getVm(vmId, userId);
+			CloudletScheduler scheduler = pod.getCloudletScheduler();
 			double estimatedFinishTime = scheduler.cloudletSubmit(cl, fileTransferTime);
 
 			if (estimatedFinishTime > 0.0) { // if this cloudlet is in the exec

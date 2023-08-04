@@ -12,27 +12,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
-import org.cloudbus.cloudsim.Cloudlet;
-import org.cloudbus.cloudsim.CloudletSchedulerDynamicWorkload;
-import org.cloudbus.cloudsim.Datacenter;
-import org.cloudbus.cloudsim.DatacenterBroker;
-import org.cloudbus.cloudsim.DatacenterCharacteristics;
-import org.cloudbus.cloudsim.Host;
-import org.cloudbus.cloudsim.HostDynamicWorkload;
-import org.cloudbus.cloudsim.HostStateHistoryEntry;
-import org.cloudbus.cloudsim.Log;
-import org.cloudbus.cloudsim.Pe;
-import org.cloudbus.cloudsim.Storage;
-import org.cloudbus.cloudsim.Vm;
-import org.cloudbus.cloudsim.VmAllocationPolicy;
-import org.cloudbus.cloudsim.VmSchedulerTimeSharedOverSubscription;
-import org.cloudbus.cloudsim.VmStateHistoryEntry;
-import org.cloudbus.cloudsim.power.PowerDatacenter;
-import org.cloudbus.cloudsim.power.PowerDatacenterBroker;
-import org.cloudbus.cloudsim.power.PowerHost;
-import org.cloudbus.cloudsim.power.PowerHostUtilizationHistory;
-import org.cloudbus.cloudsim.power.PowerVm;
-import org.cloudbus.cloudsim.power.PowerVmAllocationPolicyMigrationAbstract;
+import org.cloudbus.cloudsim.*;
+import org.cloudbus.cloudsim.Pod;
+import org.cloudbus.cloudsim.power.*;
+import org.cloudbus.cloudsim.power.PowerPodAllocationPolicyMigrationAbstract;
 import org.cloudbus.cloudsim.provisioners.BwProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.PeProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.RamProvisionerSimple;
@@ -61,11 +44,11 @@ public class Helper {
 	 * 
 	 * @return the list< vm>
 	 */
-	public static List<Vm> createVmList(int brokerId, int vmsNumber) {
-		List<Vm> vms = new ArrayList<Vm>();
+	public static List<Pod> createVmList(int brokerId, int vmsNumber) {
+		List<Pod> pods = new ArrayList<Pod>();
 		for (int i = 0; i < vmsNumber; i++) {
 			int vmType = i / (int) Math.ceil((double) vmsNumber / Constants.VM_TYPES);
-			vms.add(new PowerVm(
+			pods.add(new PowerPod(
 					i,
 					brokerId,
 					Constants.VM_MIPS[vmType],
@@ -78,7 +61,7 @@ public class Helper {
 					new CloudletSchedulerDynamicWorkload(Constants.VM_MIPS[vmType], Constants.VM_PES[vmType]),
 					Constants.SCHEDULING_INTERVAL));
 		}
-		return vms;
+		return pods;
 	}
 
 	/**
@@ -104,7 +87,7 @@ public class Helper {
 					new BwProvisionerSimple(Constants.HOST_BW),
 					Constants.HOST_STORAGE,
 					peList,
-					new VmSchedulerTimeSharedOverSubscription(peList),
+					new PodSchedulerTimeSharedOverSubscription(peList),
 					Constants.HOST_POWER[hostType]));
 		}
 		return hostList;
@@ -132,7 +115,7 @@ public class Helper {
 	 * @param name the name
 	 * @param datacenterClass the datacenter class
 	 * @param hostList the host list
-	 * @param vmAllocationPolicy the vm allocation policy
+	 * @param podAllocationPolicy the vm allocation policy
 	 * @param simulationLength
 	 * 
 	 * @return the power datacenter
@@ -143,7 +126,7 @@ public class Helper {
 			String name,
 			Class<? extends Datacenter> datacenterClass,
 			List<PowerHost> hostList,
-			VmAllocationPolicy vmAllocationPolicy) throws Exception {
+			PodAllocationPolicy podAllocationPolicy) throws Exception {
 		String arch = "x86"; // system architecture
 		String os = "Linux"; // operating system
 		String vmm = "Xen";
@@ -169,12 +152,12 @@ public class Helper {
 			datacenter = datacenterClass.getConstructor(
 					String.class,
 					DatacenterCharacteristics.class,
-					VmAllocationPolicy.class,
+					PodAllocationPolicy.class,
 					List.class,
 					Double.TYPE).newInstance(
 					name,
 					characteristics,
-					vmAllocationPolicy,
+					podAllocationPolicy,
 					new LinkedList<Storage>(),
 					Constants.SCHEDULING_INTERVAL);
 		} catch (Exception e) {
@@ -212,15 +195,15 @@ public class Helper {
 	/**
 	 * Gets the times before vm migration.
 	 * 
-	 * @param vms the vms
+	 * @param pods the pods
 	 * @return the times before vm migration
 	 */
-	public static List<Double> getTimesBeforeVmMigration(List<Vm> vms) {
+	public static List<Double> getTimesBeforeVmMigration(List<Pod> pods) {
 		List<Double> timeBeforeVmMigration = new LinkedList<Double>();
-		for (Vm vm : vms) {
+		for (Pod pod : pods) {
 			boolean previousIsInMigration = false;
 			double lastTimeMigrationFinished = 0;
-			for (VmStateHistoryEntry entry : vm.getStateHistory()) {
+			for (PodStateHistoryEntry entry : pod.getStateHistory()) {
 				if (previousIsInMigration == true && entry.isInMigration() == false) {
 					timeBeforeVmMigration.add(entry.getTime() - lastTimeMigrationFinished);
 				}
@@ -244,7 +227,7 @@ public class Helper {
 	 */
 	public static void printResults(
 			PowerDatacenter datacenter,
-			List<Vm> vms,
+			List<Pod> pods,
 			double lastClock,
 			String experimentName,
 			boolean outputInCsv,
@@ -253,13 +236,13 @@ public class Helper {
 		List<Host> hosts = datacenter.getHostList();
 
 		int numberOfHosts = hosts.size();
-		int numberOfVms = vms.size();
+		int numberOfVms = pods.size();
 
 		double totalSimulationTime = lastClock;
 		double energy = datacenter.getPower() / (3600 * 1000);
 		int numberOfMigrations = datacenter.getMigrationCount();
 
-		Map<String, Double> slaMetrics = getSlaMetrics(vms);
+		Map<String, Double> slaMetrics = getSlaMetrics(pods);
 
 		double slaOverall = slaMetrics.get("overall");
 		double slaAverage = slaMetrics.get("average");
@@ -283,7 +266,7 @@ public class Helper {
 			stDevTimeBeforeHostShutdown = MathUtil.stDev(timeBeforeHostShutdown);
 		}
 
-		List<Double> timeBeforeVmMigration = getTimesBeforeVmMigration(vms);
+		List<Double> timeBeforeVmMigration = getTimesBeforeVmMigration(pods);
 		double meanTimeBeforeVmMigration = Double.NaN;
 		double stDevTimeBeforeVmMigration = Double.NaN;
 		if (!timeBeforeVmMigration.isEmpty()) {
@@ -337,8 +320,8 @@ public class Helper {
 			data.append(String.format("%.2f", meanTimeBeforeVmMigration) + delimeter);
 			data.append(String.format("%.2f", stDevTimeBeforeVmMigration) + delimeter);
 
-			if (datacenter.getVmAllocationPolicy() instanceof PowerVmAllocationPolicyMigrationAbstract) {
-				PowerVmAllocationPolicyMigrationAbstract vmAllocationPolicy = (PowerVmAllocationPolicyMigrationAbstract) datacenter
+			if (datacenter.getVmAllocationPolicy() instanceof PowerPodAllocationPolicyMigrationAbstract) {
+				PowerPodAllocationPolicyMigrationAbstract vmAllocationPolicy = (PowerPodAllocationPolicyMigrationAbstract) datacenter
 						.getVmAllocationPolicy();
 
 				double executionTimeVmSelectionMean = MathUtil.mean(vmAllocationPolicy
@@ -414,8 +397,8 @@ public class Helper {
 					"StDev time before a VM migration: %.2f sec",
 					stDevTimeBeforeVmMigration));
 
-			if (datacenter.getVmAllocationPolicy() instanceof PowerVmAllocationPolicyMigrationAbstract) {
-				PowerVmAllocationPolicyMigrationAbstract vmAllocationPolicy = (PowerVmAllocationPolicyMigrationAbstract) datacenter
+			if (datacenter.getVmAllocationPolicy() instanceof PowerPodAllocationPolicyMigrationAbstract) {
+				PowerPodAllocationPolicyMigrationAbstract vmAllocationPolicy = (PowerPodAllocationPolicyMigrationAbstract) datacenter
 						.getVmAllocationPolicy();
 
 				double executionTimeVmSelectionMean = MathUtil.mean(vmAllocationPolicy
@@ -557,17 +540,17 @@ public class Helper {
 	/**
 	 * Gets the sla metrics.
 	 * 
-	 * @param vms the vms
+	 * @param pods the pods
 	 * @return the sla metrics
 	 */
-	protected static Map<String, Double> getSlaMetrics(List<Vm> vms) {
+	protected static Map<String, Double> getSlaMetrics(List<Pod> pods) {
 		Map<String, Double> metrics = new HashMap<String, Double>();
 		List<Double> slaViolation = new LinkedList<Double>();
 		double totalAllocated = 0;
 		double totalRequested = 0;
 		double totalUnderAllocatedDueToMigration = 0;
 
-		for (Vm vm : vms) {
+		for (Pod pod : pods) {
 			double vmTotalAllocated = 0;
 			double vmTotalRequested = 0;
 			double vmUnderAllocatedDueToMigration = 0;
@@ -576,7 +559,7 @@ public class Helper {
 			double previousRequested = 0;
 			boolean previousIsInMigration = false;
 
-			for (VmStateHistoryEntry entry : vm.getStateHistory()) {
+			for (PodStateHistoryEntry entry : pod.getStateHistory()) {
 				if (previousTime != -1) {
 					double timeDiff = entry.getTime() - previousTime;
 					vmTotalAllocated += previousAllocated * timeDiff;
@@ -676,7 +659,7 @@ public class Helper {
 	 */
 	public static void writeMetricHistory(
 			List<? extends Host> hosts,
-			PowerVmAllocationPolicyMigrationAbstract vmAllocationPolicy,
+			PowerPodAllocationPolicyMigrationAbstract vmAllocationPolicy,
 			String outputPath) {
 		// for (Host host : hosts) {
 		for (int j = 0; j < 10; j++) {
@@ -750,7 +733,7 @@ public class Helper {
 	 */
 	public static void printMetricHistory(
 			List<? extends Host> hosts,
-			PowerVmAllocationPolicyMigrationAbstract vmAllocationPolicy) {
+			PowerPodAllocationPolicyMigrationAbstract vmAllocationPolicy) {
 		for (int i = 0; i < 10; i++) {
 			Host host = hosts.get(i);
 

@@ -1,6 +1,6 @@
 package org.cloudbus.cloudsim.container.containerPlacementPolicies;
 
-import org.cloudbus.cloudsim.container.core.ContainerVm;
+import org.cloudbus.cloudsim.container.core.ContainerPod;
 import org.cloudbus.cloudsim.container.utils.RandomGen;
 import org.cloudbus.cloudsim.Log;
 
@@ -13,13 +13,13 @@ import java.util.Set;
  */
 public class ContainerPlacementPolicyRandomSelection extends ContainerPlacementPolicy {
     @Override
-    public ContainerVm getContainerVm(List<ContainerVm> vmList, Object obj, Set<? extends ContainerVm> excludedVmList) {
-        ContainerVm containerVm = null;
+    public ContainerPod getContainerVm(List<ContainerPod> vmList, Object obj, Set<? extends ContainerPod> excludedVmList) {
+        ContainerPod containerPod = null;
         while (true) {
             if (vmList.size() > 0) {
                 int randomNum = new RandomGen().getNum(vmList.size());
-                containerVm = vmList.get(randomNum);
-                if (excludedVmList.contains(containerVm)) {
+                containerPod = vmList.get(randomNum);
+                if (excludedVmList.contains(containerPod)) {
                     continue;
                 }
             } else {
@@ -27,7 +27,7 @@ public class ContainerPlacementPolicyRandomSelection extends ContainerPlacementP
                 Log.print(String.format("Error: The VM list Size is: %d", vmList.size()));
             }
 
-            return containerVm;
+            return containerPod;
         }
     }
 }

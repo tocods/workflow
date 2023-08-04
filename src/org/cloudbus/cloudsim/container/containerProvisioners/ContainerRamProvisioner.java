@@ -71,9 +71,9 @@ public abstract class ContainerRamProvisioner {
     public abstract boolean isSuitableForContainer(Container container, float ram);
 
     /**
-     * get the allocated ram of the Vm
+     * get the allocated ram of the Pod
      *
-     * @return the used ram of the Vm
+     * @return the used ram of the Pod
      */
     public float getUsedVmRam() {
         return getRam() - availableVmRam;
@@ -83,7 +83,7 @@ public abstract class ContainerRamProvisioner {
     /**
      * get the available ram
      *
-     * @return the available ram of the Vm
+     * @return the available ram of the Pod
      */
     public float getAvailableVmRam() {
         return availableVmRam;

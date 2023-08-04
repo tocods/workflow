@@ -19,7 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.Log;
-import org.cloudbus.cloudsim.container.core.ContainerVm;
+import org.cloudbus.cloudsim.container.core.ContainerPod;
 import org.workflowsim.WorkflowSimTags;
 
 /**
@@ -41,10 +41,10 @@ public class StaticSchedulingAlgorithm extends BaseSchedulingAlgorithm {
     @Override
     public void run() throws Exception {
 
-        Map<Integer, ContainerVm> mId2Vm = new HashMap<>();
+        Map<Integer, ContainerPod> mId2Vm = new HashMap<>();
 
         for (int i = 0; i < getVmList().size(); i++) {
-            ContainerVm vm = (ContainerVm) getVmList().get(i);
+            ContainerPod vm = (ContainerPod) getVmList().get(i);
             if (vm != null) {
                 mId2Vm.put(vm.getId(), vm);
             }
@@ -65,7 +65,7 @@ public class StaticSchedulingAlgorithm extends BaseSchedulingAlgorithm {
                 cloudlet.setVmId(0);
 
             }
-            ContainerVm vm = mId2Vm.get(cloudlet.getVmId());
+            ContainerPod vm = mId2Vm.get(cloudlet.getVmId());
             if (vm.getState() == WorkflowSimTags.VM_STATUS_IDLE) {
                 vm.setState(WorkflowSimTags.VM_STATUS_BUSY);
                 getScheduledList().add(cloudlet);

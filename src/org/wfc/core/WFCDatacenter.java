@@ -1,8 +1,7 @@
 package org.wfc.core;
 
-import org.cloudbus.cloudsim.container.core.*;
 import org.cloudbus.cloudsim.container.resourceAllocators.ContainerAllocationPolicy;
-import org.cloudbus.cloudsim.container.resourceAllocators.ContainerVmAllocationPolicy;
+import org.cloudbus.cloudsim.container.resourceAllocators.ContainerPodAllocationPolicy;
 import org.cloudbus.cloudsim.*;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.core.CloudSimTags;
@@ -14,15 +13,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.math3.stat.descriptive.rank.Percentile;
 import org.cloudbus.cloudsim.container.core.Container;
 import org.cloudbus.cloudsim.container.core.containerCloudSimTags;
 import org.cloudbus.cloudsim.container.core.ContainerCloudlet;
 import org.cloudbus.cloudsim.container.core.ContainerDatacenterCharacteristics;
 import org.cloudbus.cloudsim.container.core.ContainerHost;
-import org.cloudbus.cloudsim.container.core.ContainerVm;
+import org.cloudbus.cloudsim.container.core.ContainerPod;
 import org.cloudbus.cloudsim.container.schedulers.ContainerCloudletScheduler;
-import org.wfc.core.WFCConstants;
 import org.workflowsim.FileItem;
 import org.workflowsim.Job;
 import org.workflowsim.Task;
@@ -48,7 +45,7 @@ public class WFCDatacenter extends SimEntity {
     /**
      * The vm provisioner.
      */
-    private ContainerVmAllocationPolicy vmAllocationPolicy;
+    private ContainerPodAllocationPolicy vmAllocationPolicy;
     /**
      * The container provisioner.
      */
@@ -67,7 +64,7 @@ public class WFCDatacenter extends SimEntity {
     /**
      * The vm list.
      */
-    private List<? extends ContainerVm> containerVmList;
+    private List<? extends ContainerPod> containerVmList;
     /**
      * The container list.
      */
@@ -102,7 +99,7 @@ public class WFCDatacenter extends SimEntity {
     public WFCDatacenter(
             String name,
             ContainerDatacenterCharacteristics characteristics,
-            ContainerVmAllocationPolicy vmAllocationPolicy,
+            ContainerPodAllocationPolicy vmAllocationPolicy,
             ContainerAllocationPolicy containerAllocationPolicy,
             List<Storage> storageList,
             double schedulingInterval, String experimentName, String logAddress) throws Exception {
@@ -113,7 +110,7 @@ public class WFCDatacenter extends SimEntity {
         setContainerAllocationPolicy(containerAllocationPolicy);
         setLastProcessTime(0.0);
         setStorageList(storageList);
-        setContainerVmList(new ArrayList<ContainerVm>());
+        setContainerVmList(new ArrayList<ContainerPod>());
         setContainerList(new ArrayList<Container>());
         setSchedulingInterval(schedulingInterval);
         setExperimentName(experimentName);
@@ -313,15 +310,15 @@ public class WFCDatacenter extends SimEntity {
                     data[2] = CloudSimTags.FALSE;
                 }
                 if (result) {
-                    ContainerVm containerVm = getContainerAllocationPolicy().getContainerVm(container);
-                    data[0] = containerVm.getId();
-                    if(containerVm.getId() == -1){
+                    ContainerPod containerPod = getContainerAllocationPolicy().getContainerVm(container);
+                    data[0] = containerPod.getId();
+                    if(containerPod.getId() == -1){
 
                         Log.printConcatLine("The ContainerVM ID is not known (-1) !");
                     }
                     
                     
-                    Log.printConcatLine("Assigning the container#" + container.getUid() + "to VM #" + containerVm.getUid());
+                    Log.printConcatLine("Assigning the container#" + container.getUid() + "to VM #" + containerPod.getUid());
                     
                     getContainerList().add(container);
                     if (container.isBeingInstantiated()) {
@@ -517,32 +514,32 @@ public class WFCDatacenter extends SimEntity {
      * @post $none
      */
     protected void processVmCreate(SimEvent ev, boolean ack) {
-        ContainerVm containerVm = (ContainerVm) ev.getData();
+        ContainerPod containerPod = (ContainerPod) ev.getData();
 
-        boolean result = getVmAllocationPolicy().allocateHostForVm(containerVm);
+        boolean result = getVmAllocationPolicy().allocateHostForVm(containerPod);
 
         if (ack) {
             int[] data = new int[3];
             data[0] = getId();
-            data[1] = containerVm.getId();
+            data[1] = containerPod.getId();
 
             if (result) {
                 data[2] = CloudSimTags.TRUE;
             } else {
                 data[2] = CloudSimTags.FALSE;
             }
-            send(containerVm.getUserId(), CloudSim.getMinTimeBetweenEvents(), CloudSimTags.VM_CREATE_ACK, data);
+            send(containerPod.getUserId(), CloudSim.getMinTimeBetweenEvents(), CloudSimTags.VM_CREATE_ACK, data);
         }
 
         if (result) {
-            getContainerVmList().add(containerVm);
+            getContainerVmList().add(containerPod);
 
-            if (containerVm.isBeingInstantiated()) {
-                containerVm.setBeingInstantiated(false);
+            if (containerPod.isBeingInstantiated()) {
+                containerPod.setBeingInstantiated(false);
             }
 
-            containerVm.updateVmProcessing(CloudSim.clock(), getVmAllocationPolicy().getHost(containerVm).getContainerVmScheduler()
-                    .getAllocatedMipsForContainerVm(containerVm));
+            containerPod.updateVmProcessing(CloudSim.clock(), getVmAllocationPolicy().getHost(containerPod).getContainerVmScheduler()
+                    .getAllocatedMipsForContainerVm(containerPod));
         }
 
     }
@@ -558,19 +555,19 @@ public class WFCDatacenter extends SimEntity {
      * @post $none
      */
     protected void processVmDestroy(SimEvent ev, boolean ack) {
-        ContainerVm containerVm = (ContainerVm) ev.getData();
-        getVmAllocationPolicy().deallocateHostForVm(containerVm);
+        ContainerPod containerPod = (ContainerPod) ev.getData();
+        getVmAllocationPolicy().deallocateHostForVm(containerPod);
 
         if (ack) {
             int[] data = new int[3];
             data[0] = getId();
-            data[1] = containerVm.getId();
+            data[1] = containerPod.getId();
             data[2] = CloudSimTags.TRUE;
 
-            sendNow(containerVm.getUserId(), CloudSimTags.VM_DESTROY_ACK, data);
+            sendNow(containerPod.getUserId(), CloudSimTags.VM_DESTROY_ACK, data);
         }
 
-        getContainerVmList().remove(containerVm);
+        getContainerVmList().remove(containerPod);
     }
 
     /**
@@ -590,12 +587,12 @@ public class WFCDatacenter extends SimEntity {
         @SuppressWarnings("unchecked")
         Map<String, Object> migrate = (HashMap<String, Object>) tmp;
 
-        ContainerVm containerVm = (ContainerVm) migrate.get("vm");
+        ContainerPod containerPod = (ContainerPod) migrate.get("vm");
         ContainerHost host = (ContainerHost) migrate.get("host");
 
-        getVmAllocationPolicy().deallocateHostForVm(containerVm);
-        host.removeMigratingInContainerVm(containerVm);
-        boolean result = getVmAllocationPolicy().allocateHostForVm(containerVm, host);
+        getVmAllocationPolicy().deallocateHostForVm(containerPod);
+        host.removeMigratingInContainerVm(containerPod);
+        boolean result = getVmAllocationPolicy().allocateHostForVm(containerPod, host);
         if (!result) {
             Log.printLine("[Datacenter.processVmMigrate] VM allocation to the destination host failed");
             System.exit(0);
@@ -604,7 +601,7 @@ public class WFCDatacenter extends SimEntity {
         if (ack) {
             int[] data = new int[3];
             data[0] = getId();
-            data[1] = containerVm.getId();
+            data[1] = containerPod.getId();
 
             if (result) {
                 data[2] = CloudSimTags.TRUE;
@@ -617,9 +614,9 @@ public class WFCDatacenter extends SimEntity {
         Log.formatLine(
                 "%.2f: Migration of VM #%d to Host #%d is completed",
                 CloudSim.clock(),
-                containerVm.getId(),
+                containerPod.getId(),
                 host.getId());
-        containerVm.setInMigration(false);
+        containerPod.setInMigration(false);
     }
 
     /**
@@ -641,18 +638,18 @@ public class WFCDatacenter extends SimEntity {
         Map<String, Object> migrate = (HashMap<String, Object>) tmp;
 
         Container container = (Container) migrate.get("container");
-        ContainerVm containerVm = (ContainerVm) migrate.get("vm");
+        ContainerPod containerPod = (ContainerPod) migrate.get("vm");
 
         getContainerAllocationPolicy().deallocateVmForContainer(container);
-        if(containerVm.getContainersMigratingIn().contains(container)){
-            containerVm.removeMigratingInContainer(container);}
-        boolean result = getContainerAllocationPolicy().allocateVmForContainer(container, containerVm);
+        if(containerPod.getContainersMigratingIn().contains(container)){
+            containerPod.removeMigratingInContainer(container);}
+        boolean result = getContainerAllocationPolicy().allocateVmForContainer(container, containerPod);
         if (!result) {
             Log.printLine("[Datacenter.processContainerMigrate]Container allocation to the destination vm failed");
             System.exit(0);
         }
-        if (containerVm.isInWaiting()){
-            containerVm.setInWaiting(false);
+        if (containerPod.isInWaiting()){
+            containerPod.setInWaiting(false);
 
         }
 
@@ -670,7 +667,7 @@ public class WFCDatacenter extends SimEntity {
         }
 
         Log.formatLine(
-                "%.2f: Migration of container #%d to Vm #%d is completed",
+                "%.2f: Migration of container #%d to Pod #%d is completed",
                 CloudSim.clock(),
                 container.getId(),
                 container.getVm().getId());
@@ -790,13 +787,13 @@ public class WFCDatacenter extends SimEntity {
 
             // the cloudlet will migrate from one vm to another does the destination VM exist?
             if (destId == getId()) {
-                ContainerVm containerVm = getVmAllocationPolicy().getHost(vmDestId, userId).getContainerVm(vmDestId, userId);
-                if (containerVm == null) {
+                ContainerPod containerPod = getVmAllocationPolicy().getHost(vmDestId, userId).getContainerVm(vmDestId, userId);
+                if (containerPod == null) {
                     failed = true;
                 } else {
                     // time to transfer the files
                     double fileTransferTime = predictFileTransferTime(cl.getRequiredFiles());
-                    containerVm.getContainer(containerDestId, userId).getContainerCloudletScheduler().cloudletSubmit(cl, fileTransferTime);
+                    containerPod.getContainer(containerDestId, userId).getContainerCloudletScheduler().cloudletSubmit(cl, fileTransferTime);
                 }
             } else {// the cloudlet will migrate from one resource to another
                 int tag = ((type == CloudSimTags.CLOUDLET_MOVE_ACK) ? CloudSimTags.CLOUDLET_SUBMIT_ACK
@@ -867,13 +864,15 @@ public class WFCDatacenter extends SimEntity {
             int userId = cl.getUserId();
             int vmId = cl.getVmId();
             int containerId = cl.getContainerId();
-
+            Log.printLine("job id: " + cl.getCloudletId() + "pod id is: " + vmId +"container id: " + containerId);
          
 
             ContainerHost host = getVmAllocationPolicy().getHost(vmId, userId);
-            ContainerVm vm = host.getContainerVm(vmId, userId);
+            ContainerPod vm = host.getContainerVm(vmId, userId);
             Container container = vm.getContainer(containerId, userId);
-            
+            if(container == null) {
+                Log.printLine("Container is null");
+            }
            switch (Parameters.getCostModel()) {
                 case DATACENTER:
                     // process this Cloudlet to this CloudResource
@@ -1088,7 +1087,7 @@ public class WFCDatacenter extends SimEntity {
         List<? extends ContainerHost> list = getVmAllocationPolicy().getContainerHostList();
         for (int i = 0; i < list.size(); i++) {
             ContainerHost host = list.get(i);
-            for (ContainerVm vm : host.getVmList()) {
+            for (ContainerPod vm : host.getVmList()) {
                 for (Container container : vm.getContainerList()) {
                     while (container.getContainerCloudletScheduler().isFinishedCloudlets()) {
                         Cloudlet cl = container.getContainerCloudletScheduler().getNextFinishedCloudlet();
@@ -1280,7 +1279,7 @@ public class WFCDatacenter extends SimEntity {
      *
      * @return the vm allocation policy
      */
-    public ContainerVmAllocationPolicy getVmAllocationPolicy() {
+    public ContainerPodAllocationPolicy getVmAllocationPolicy() {
         return vmAllocationPolicy;
     }
 
@@ -1289,7 +1288,7 @@ public class WFCDatacenter extends SimEntity {
      *
      * @param vmAllocationPolicy the new vm allocation policy
      */
-    protected void setVmAllocationPolicy(ContainerVmAllocationPolicy vmAllocationPolicy) {
+    protected void setVmAllocationPolicy(ContainerPodAllocationPolicy vmAllocationPolicy) {
         this.vmAllocationPolicy = vmAllocationPolicy;
     }
 
@@ -1335,7 +1334,7 @@ public class WFCDatacenter extends SimEntity {
      * @return the vm list
      */
     @SuppressWarnings("unchecked")
-    public <T extends ContainerVm> List<T> getContainerVmList() {
+    public <T extends ContainerPod> List<T> getContainerVmList() {
         return (List<T>) containerVmList;
     }
 
@@ -1344,7 +1343,7 @@ public class WFCDatacenter extends SimEntity {
      *
      * @param containerVmList the new vm list
      */
-    protected <T extends ContainerVm> void setContainerVmList(List<T> containerVmList) {
+    protected <T extends ContainerPod> void setContainerVmList(List<T> containerVmList) {
         this.containerVmList = containerVmList;
     }
 
@@ -1408,7 +1407,7 @@ public class WFCDatacenter extends SimEntity {
      * @param job
      * @param vm
      */
-    private void updateTaskExecTime(Job job, ContainerVm vm) {
+    private void updateTaskExecTime(Job job, ContainerPod vm) {
         double start_time = job.getExecStartTime();
         for (Task task : job.getTaskList()) {
             task.setExecStartTime(start_time);
@@ -1424,7 +1423,7 @@ public class WFCDatacenter extends SimEntity {
      * condor-io) add files to the local storage; For a shared file system (such
      * as NFS) add files to the shared storage
      *
-     * @param cl, the job
+     * @param
      * @pre $none
      * @post $none
      */
@@ -1510,9 +1509,11 @@ public class WFCDatacenter extends SimEntity {
                         int vmId = job.getVmId();
                         int userId = job.getUserId();
                         ContainerHost host = getVmAllocationPolicy().getHost(vmId, userId);
-                        ContainerVm vm = host.getContainerVm(vmId, userId);
+                        ContainerPod vm = host.getContainerVm(vmId, userId);
 
                         boolean requiredFileStagein = true;
+                        int destinationId = vmId;
+                        int sourceId = vmId;
                         for (Iterator it = siteList.iterator(); it.hasNext();) {
                             //site is where one replica of this data is located at
                             String site = (String) it.next();
@@ -1528,6 +1529,7 @@ public class WFCDatacenter extends SimEntity {
                                 break;
                             }
                             double bwth;
+                            int destId;
                             if (site.equals(Parameters.SOURCE)) {
                                 //transfers from the source to the VM is limited to the VM bw only
                                 bwth = vm.getBw();
@@ -1538,9 +1540,11 @@ public class WFCDatacenter extends SimEntity {
                                 //bwth = dcStorage.getBandwidth(Integer.parseInt(site), vmId);
                             }
                             if (bwth > maxBwth) {
+                                Log.printLine(site);
                                 maxBwth = bwth;
                             }
                         }
+
                         if (requiredFileStagein && maxBwth > 0.0) {
                             time += file.getSize() / (double) Consts.MILLION / maxBwth;
                         }
@@ -1586,7 +1590,7 @@ public class WFCDatacenter extends SimEntity {
                         /**
                          * Left here for future work
                          */
-                        ContainerVm vm = (ContainerVm) host.getContainerVm(vmId, userId);
+                        ContainerPod vm = (ContainerPod) host.getContainerVm(vmId, userId);
                         WFCReplicaCatalog.addFileToStorage(file.getName(), Integer.toString(vmId));
                         break;
                 }

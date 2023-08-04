@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.Log;
-import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.container.core.*;
 import org.cloudbus.cloudsim.core.CloudSimTags;
 import org.cloudbus.cloudsim.core.SimEntity;
@@ -62,7 +61,7 @@ public final class WFCEngine extends SimEntity {
      */
     protected int jobsSubmitted;
     
-    protected List<? extends ContainerVm> vmList;
+    protected List<? extends ContainerPod> vmList;
     
     protected List<? extends Container> containerList;
         
@@ -100,12 +99,13 @@ public final class WFCEngine extends SimEntity {
 
         for (int i = 0; i < schedulers; i++) {
             WFCScheduler wfs = new WFCScheduler(name + "_Scheduler_" + i, WFCConstants.OVERBOOKING_FACTOR);
-            
+            vmList = createVmList(wfs.getId(),  WFCConstants.WFC_NUMBER_VMS);
+            wfs.submitVmList(vmList);
+
             containerList = createContainerList(wfs.getId(), WFCConstants.WFC_NUMBER_CONTAINER);            
             wfs.submitContainerList(containerList);   
         
-            vmList = createVmList(wfs.getId(),  WFCConstants.WFC_NUMBER_VMS);
-            wfs.submitVmList(vmList); 
+
             
             getSchedulers().add(wfs);
             getSchedulerIds().add(wfs.getId());
@@ -121,17 +121,17 @@ public final class WFCEngine extends SimEntity {
      * @param list the list
      * @param schedulerId the scheduler id
      */
-    public void submitVmList(List<? extends ContainerVm> list, int schedulerId) {
+    public void submitVmList(List<? extends ContainerPod> list, int schedulerId) {
         getScheduler(schedulerId).submitVmList(list);
     }
 
-    public void submitVmList(List<? extends ContainerVm> list) {
+    public void submitVmList(List<? extends ContainerPod> list) {
         //bug here, not sure whether we should have different workflow schedulers
         getScheduler(0).submitVmList(list);
         setVmList(list);
     }
     
-    public List<? extends ContainerVm> getAllVmList(){
+    public List<? extends ContainerPod> getAllVmList(){
         if(this.vmList != null && !this.vmList.isEmpty()){
             return this.vmList;
         }
@@ -465,7 +465,7 @@ public final class WFCEngine extends SimEntity {
      * @return the vm list
      */
     @SuppressWarnings("unchecked")
-    public <T extends ContainerVm> List<T> getVmList() {
+    public <T extends ContainerPod> List<T> getVmList() {
         return (List<T>) vmList;
     }
 
@@ -475,7 +475,7 @@ public final class WFCEngine extends SimEntity {
      * @param <T> the generic type
      * @param vmList the new vm list
      */
-    private <T extends ContainerVm> void setVmList(List<T> vmList) {
+    private <T extends ContainerPod> void setVmList(List<T> vmList) {
         this.vmList = vmList;
     }
 

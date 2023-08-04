@@ -1,7 +1,7 @@
 package org.cloudbus.cloudsim.container.resourceAllocators;
 
 import org.cloudbus.cloudsim.container.core.Container;
-import org.cloudbus.cloudsim.container.core.ContainerVm;
+import org.cloudbus.cloudsim.container.core.ContainerPod;
 import org.cloudbus.cloudsim.Log;
 import org.cloudbus.cloudsim.core.CloudSim;
 
@@ -15,7 +15,7 @@ import java.util.Map;
 public abstract class PowerContainerAllocationPolicy extends ContainerAllocationPolicy{
 
         /** The container table. */
-        private final Map<String, ContainerVm> containerTable = new HashMap<>();
+        private final Map<String, ContainerPod> containerTable = new HashMap<>();
 
         /**
          * Instantiates a new power vm allocation policy abstract.
@@ -27,35 +27,35 @@ public abstract class PowerContainerAllocationPolicy extends ContainerAllocation
 
         /*
          * (non-Javadoc)
-         * @see org.cloudbus.cloudsim.VmAllocationPolicy#allocateHostForVm(org.cloudbus.cloudsim.Vm)
+         * @see org.cloudbus.cloudsim.PodAllocationPolicy#allocateHostForVm(org.cloudbus.cloudsim.Pod)
          */
         @Override
-        public boolean allocateVmForContainer(Container container, List<ContainerVm> containerVmList) {
-            setContainerVmList(containerVmList);
+        public boolean allocateVmForContainer(Container container, List<ContainerPod> containerPodList) {
+            setContainerVmList(containerPodList);
             return allocateVmForContainer(container, findVmForContainer(container));
         }
 
         /*
          * (non-Javadoc)
-         * @see org.cloudbus.cloudsim.VmAllocationPolicy#allocateHostForVm(org.cloudbus.cloudsim.Vm,
+         * @see org.cloudbus.cloudsim.PodAllocationPolicy#allocateHostForVm(org.cloudbus.cloudsim.Pod,
          * org.cloudbus.cloudsim.Host)
          */
         @Override
-        public boolean allocateVmForContainer(Container container, ContainerVm containerVm) {
-            if (containerVm == null) {
+        public boolean allocateVmForContainer(Container container, ContainerPod containerPod) {
+            if (containerPod == null) {
                 Log.formatLine("%.2f: No suitable VM found for Container#" + container.getId() + "\n", CloudSim.clock());
                 return false;
             }
-            if (containerVm.containerCreate(container)) { // if vm has been succesfully created in the host
-                getContainerTable().put(container.getUid(), containerVm);
-//                container.setVm(containerVm);
+            if (containerPod.containerCreate(container)) { // if vm has been succesfully created in the host
+                getContainerTable().put(container.getUid(), containerPod);
+//                container.setVm(containerPod);
                 Log.formatLine(
-                        "%.2f: Container #" + container.getId() + " has been allocated to the VM #" + containerVm.getId(),
+                        "%.2f: Container #" + container.getId() + " has been allocated to the VM #" + containerPod.getId(),
                         CloudSim.clock());
                 return true;
             }
             Log.formatLine(
-                    "%.2f: Creation of Container #" + container.getId() + " on the Vm #" + containerVm.getId() + " failed\n",
+                    "%.2f: Creation of Container #" + container.getId() + " on the Pod #" + containerPod.getId() + " failed\n",
                     CloudSim.clock());
             return false;
         }
@@ -66,11 +66,11 @@ public abstract class PowerContainerAllocationPolicy extends ContainerAllocation
          * @param container the vm
          * @return the power host
          */
-        public ContainerVm findVmForContainer(Container container) {
-            for (ContainerVm containerVm : getContainerVmList()) {
-//                Log.printConcatLine("Trying vm #",containerVm.getId(),"For container #", container.getId());
-                if (containerVm.isSuitableForContainer(container)) {
-                    return containerVm;
+        public ContainerPod findVmForContainer(Container container) {
+            for (ContainerPod containerPod : getContainerVmList()) {
+//                Log.printConcatLine("Trying vm #",containerPod.getId(),"For container #", container.getId());
+                if (containerPod.isSuitableForContainer(container)) {
+                    return containerPod;
                 }
             }
             return null;
@@ -78,31 +78,31 @@ public abstract class PowerContainerAllocationPolicy extends ContainerAllocation
 
         /*
          * (non-Javadoc)
-         * @see org.cloudbus.cloudsim.VmAllocationPolicy#deallocateHostForVm(org.cloudbus.cloudsim.Vm)
+         * @see org.cloudbus.cloudsim.PodAllocationPolicy#deallocateHostForVm(org.cloudbus.cloudsim.Pod)
          */
         @Override
         public void deallocateVmForContainer(Container container) {
-            ContainerVm containerVm = getContainerTable().remove(container.getUid());
-            if (containerVm != null) {
-                containerVm.containerDestroy(container);
+            ContainerPod containerPod = getContainerTable().remove(container.getUid());
+            if (containerPod != null) {
+                containerPod.containerDestroy(container);
             }
         }
 
         /*
          * (non-Javadoc)
-         * @see org.cloudbus.cloudsim.VmAllocationPolicy#getHost(org.cloudbus.cloudsim.Vm)
+         * @see org.cloudbus.cloudsim.PodAllocationPolicy#getHost(org.cloudbus.cloudsim.Pod)
          */
         @Override
-        public ContainerVm getContainerVm(Container container) {
+        public ContainerPod getContainerVm(Container container) {
             return getContainerTable().get(container.getUid());
         }
 
         /*
          * (non-Javadoc)
-         * @see org.cloudbus.cloudsim.VmAllocationPolicy#getHost(int, int)
+         * @see org.cloudbus.cloudsim.PodAllocationPolicy#getHost(int, int)
          */
         @Override
-        public ContainerVm getContainerVm(int containerId, int userId) {
+        public ContainerPod getContainerVm(int containerId, int userId) {
             return getContainerTable().get(Container.getUid(userId, containerId));
         }
 
@@ -111,7 +111,7 @@ public abstract class PowerContainerAllocationPolicy extends ContainerAllocation
          *
          * @return the vm table
          */
-        public Map<String, ContainerVm> getContainerTable() {
+        public Map<String, ContainerPod> getContainerTable() {
             return containerTable;
         }
 

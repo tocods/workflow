@@ -3,7 +3,7 @@ package org.cloudbus.cloudsim.container.core;
 import org.cloudbus.cloudsim.Log;
 import org.cloudbus.cloudsim.Storage;
 import org.cloudbus.cloudsim.container.resourceAllocators.ContainerAllocationPolicy;
-import org.cloudbus.cloudsim.container.resourceAllocators.ContainerVmAllocationPolicy;
+import org.cloudbus.cloudsim.container.resourceAllocators.ContainerPodAllocationPolicy;
 import org.cloudbus.cloudsim.container.utils.CostumeCSVWriter;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.core.CloudSimTags;
@@ -33,7 +33,7 @@ public class PowerContainerDatacenterCM extends PowerContainerDatacenter {
 
 
     public PowerContainerDatacenterCM(String name, ContainerDatacenterCharacteristics characteristics,
-                                      ContainerVmAllocationPolicy vmAllocationPolicy,
+                                      ContainerPodAllocationPolicy vmAllocationPolicy,
                                       ContainerAllocationPolicy containerAllocationPolicy, List<Storage> storageList,
                                       double schedulingInterval, String experimentName, String logAddress,
                                       double vmStartupDelay, double containerStartupDelay) throws Exception {
@@ -72,21 +72,21 @@ public class PowerContainerDatacenterCM extends PowerContainerDatacenter {
                 int previousContainerMigrationCount = getContainerMigrationCount();
                 int previousVmMigrationCount = getVmMigrationCount();
                 if (migrationMap != null) {
-                    List<ContainerVm> vmList = new ArrayList<ContainerVm>();
+                    List<ContainerPod> vmList = new ArrayList<ContainerPod>();
                     for (Map<String, Object> migrate : migrationMap) {
                         if (migrate.containsKey("container")) {
                             Container container = (Container) migrate.get("container");
-                            ContainerVm targetVm = (ContainerVm) migrate.get("vm");
-                            ContainerVm oldVm = container.getVm();
+                            ContainerPod targetVm = (ContainerPod) migrate.get("vm");
+                            ContainerPod oldVm = container.getVm();
                             if (oldVm == null) {
                                 Log.formatLine(
-                                        "%.2f: Migration of Container #%d to Vm #%d is started",
+                                        "%.2f: Migration of Container #%d to Pod #%d is started",
                                         currentTime,
                                         container.getId(),
                                         targetVm.getId());
                             } else {
                                 Log.formatLine(
-                                        "%.2f: Migration of Container #%d from Vm #%d to VM #%d is started",
+                                        "%.2f: Migration of Container #%d from Pod #%d to VM #%d is started",
                                         currentTime,
                                         container.getId(),
                                         oldVm.getId(),
@@ -99,10 +99,10 @@ public class PowerContainerDatacenterCM extends PowerContainerDatacenter {
                             if (migrate.containsKey("NewEventRequired")) {
                                 if (!vmList.contains(targetVm)) {
                                     // A new VM is created  send a vm create request with delay :)
-//                                Send a request to create Vm after 100 second
+//                                Send a request to create Pod after 100 second
 //                                            create a new event for this. or overright the vm create
                                     Log.formatLine(
-                                            "%.2f: Migration of Container #%d to newly created Vm #%d is started",
+                                            "%.2f: Migration of Container #%d to newly created Pod #%d is started",
                                             currentTime,
                                             container.getId(),
                                             targetVm.getId());
@@ -122,7 +122,7 @@ public class PowerContainerDatacenterCM extends PowerContainerDatacenter {
 
                                 } else {
                                     Log.formatLine(
-                                            "%.2f: Migration of Container #%d to newly created Vm #%d is started",
+                                            "%.2f: Migration of Container #%d to newly created Pod #%d is started",
                                             currentTime,
                                             container.getId(),
                                             targetVm.getId());
@@ -148,7 +148,7 @@ public class PowerContainerDatacenterCM extends PowerContainerDatacenter {
 
                             }
                         } else {
-                            ContainerVm vm = (ContainerVm) migrate.get("vm");
+                            ContainerPod vm = (ContainerPod) migrate.get("vm");
                             PowerContainerHost targetHost = (PowerContainerHost) migrate.get("host");
                             PowerContainerHost oldHost = (PowerContainerHost) vm.getHost();
 
@@ -235,17 +235,17 @@ public class PowerContainerDatacenterCM extends PowerContainerDatacenter {
 //    here we override the method
         if (ev.getData() instanceof Map) {
             Map<String, Object> map = (Map<String, Object>) ev.getData();
-            ContainerVm containerVm = (ContainerVm) map.get("vm");
+            ContainerPod containerPod = (ContainerPod) map.get("vm");
             ContainerHost host = (ContainerHost) map.get("host");
-            boolean result = getVmAllocationPolicy().allocateHostForVm(containerVm, host);
-//                set the containerVm in waiting state
-            containerVm.setInWaiting(true);
-//                containerVm.addMigratingInContainer((Container) map.get("container"));
+            boolean result = getVmAllocationPolicy().allocateHostForVm(containerPod, host);
+//                set the containerPod in waiting state
+            containerPod.setInWaiting(true);
+//                containerPod.addMigratingInContainer((Container) map.get("container"));
             ack = true;
             if (ack) {
                 Map<String, Object> data = new HashMap<String, Object>();
-                data.put("vm", containerVm);
-                data.put("result", containerVm);
+                data.put("vm", containerPod);
+                data.put("result", containerPod);
                 data.put("datacenterID", getId());
 
                 if (result) {
@@ -257,17 +257,17 @@ public class PowerContainerDatacenterCM extends PowerContainerDatacenter {
             }
 
             if (result) {
-                Log.printLine(String.format("%s VM ID #%d is created on Host #%d", CloudSim.clock(), containerVm.getId(), host.getId()));
+                Log.printLine(String.format("%s VM ID #%d is created on Host #%d", CloudSim.clock(), containerPod.getId(), host.getId()));
                 incrementNewlyCreatedVmsCount();
-                getContainerVmList().add(containerVm);
+                getContainerVmList().add(containerPod);
 
 
-                if (containerVm.isBeingInstantiated()) {
-                    containerVm.setBeingInstantiated(false);
+                if (containerPod.isBeingInstantiated()) {
+                    containerPod.setBeingInstantiated(false);
                 }
 
-                containerVm.updateVmProcessing(CloudSim.clock(), getVmAllocationPolicy().getHost(containerVm).getContainerVmScheduler()
-                        .getAllocatedMipsForContainerVm(containerVm));
+                containerPod.updateVmProcessing(CloudSim.clock(), getVmAllocationPolicy().getHost(containerPod).getContainerVmScheduler()
+                        .getAllocatedMipsForContainerVm(containerPod));
             }
 
         } else {

@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.cloudbus.cloudsim.Vm;
+import org.cloudbus.cloudsim.Pod;
 
 /**
  * PeProvisionerSimple is an extension of {@link PeProvisioner} which uses a best-effort policy to
@@ -45,8 +45,8 @@ public class PeProvisionerSimple extends PeProvisioner {
 	}
 
 	@Override
-	public boolean allocateMipsForVm(Vm vm, double mips) {
-		return allocateMipsForVm(vm.getUid(), mips);
+	public boolean allocateMipsForVm(Pod pod, double mips) {
+		return allocateMipsForVm(pod.getUid(), mips);
 	}
 
 	@Override
@@ -72,19 +72,19 @@ public class PeProvisionerSimple extends PeProvisioner {
 	}
 
 	@Override
-	public boolean allocateMipsForVm(Vm vm, List<Double> mips) {
+	public boolean allocateMipsForVm(Pod pod, List<Double> mips) {
 		int totalMipsToAllocate = 0;
 		for (double _mips : mips) {
 			totalMipsToAllocate += _mips;
 		}
 
-		if (getAvailableMips() + getTotalAllocatedMipsForVm(vm) < totalMipsToAllocate) {
+		if (getAvailableMips() + getTotalAllocatedMipsForVm(pod) < totalMipsToAllocate) {
 			return false;
 		}
 
-		setAvailableMips(getAvailableMips() + getTotalAllocatedMipsForVm(vm) - totalMipsToAllocate);
+		setAvailableMips(getAvailableMips() + getTotalAllocatedMipsForVm(pod) - totalMipsToAllocate);
 
-		getPeTable().put(vm.getUid(), mips);
+		getPeTable().put(pod.getUid(), mips);
 
 		return true;
 	}
@@ -96,10 +96,10 @@ public class PeProvisionerSimple extends PeProvisioner {
 	}
 
 	@Override
-	public double getAllocatedMipsForVmByVirtualPeId(Vm vm, int peId) {
-		if (getPeTable().containsKey(vm.getUid())) {
+	public double getAllocatedMipsForVmByVirtualPeId(Pod pod, int peId) {
+		if (getPeTable().containsKey(pod.getUid())) {
 			try {
-				return getPeTable().get(vm.getUid()).get(peId);
+				return getPeTable().get(pod.getUid()).get(peId);
 			} catch (Exception e) {
 			}
 		}
@@ -107,18 +107,18 @@ public class PeProvisionerSimple extends PeProvisioner {
 	}
 
 	@Override
-	public List<Double> getAllocatedMipsForVm(Vm vm) {
-		if (getPeTable().containsKey(vm.getUid())) {
-			return getPeTable().get(vm.getUid());
+	public List<Double> getAllocatedMipsForVm(Pod pod) {
+		if (getPeTable().containsKey(pod.getUid())) {
+			return getPeTable().get(pod.getUid());
 		}
 		return null;
 	}
 
 	@Override
-	public double getTotalAllocatedMipsForVm(Vm vm) {
-		if (getPeTable().containsKey(vm.getUid())) {
+	public double getTotalAllocatedMipsForVm(Pod pod) {
+		if (getPeTable().containsKey(pod.getUid())) {
 			double totalAllocatedMips = 0.0;
-			for (double mips : getPeTable().get(vm.getUid())) {
+			for (double mips : getPeTable().get(pod.getUid())) {
 				totalAllocatedMips += mips;
 			}
 			return totalAllocatedMips;
@@ -127,12 +127,12 @@ public class PeProvisionerSimple extends PeProvisioner {
 	}
 
 	@Override
-	public void deallocateMipsForVm(Vm vm) {
-		if (getPeTable().containsKey(vm.getUid())) {
-			for (double mips : getPeTable().get(vm.getUid())) {
+	public void deallocateMipsForVm(Pod pod) {
+		if (getPeTable().containsKey(pod.getUid())) {
+			for (double mips : getPeTable().get(pod.getUid())) {
 				setAvailableMips(getAvailableMips() + mips);
 			}
-			getPeTable().remove(vm.getUid());
+			getPeTable().remove(pod.getUid());
 		}
 	}
 

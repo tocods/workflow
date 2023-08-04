@@ -28,7 +28,7 @@ public class containerCloudSimTags {
      */
     public static final int CONTAINER_CREATE_ACK = ContainerSimBASE + 4;
     /**
-     * Denotes the containers are migrated to another Vm.
+     * Denotes the containers are migrated to another Pod.
      * Invoked in the data center.
      */
     public static final int CONTAINER_MIGRATE = ContainerSimBASE + 10;

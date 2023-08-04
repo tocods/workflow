@@ -18,12 +18,12 @@ public class ContainerList {
     }
 
     /**
-     * Return a reference to a Vm object from its ID and user ID.
+     * Return a reference to a Pod object from its ID and user ID.
      *
      * @param id            ID of required VM
      * @param userId        the user ID
      * @param containerList the vm list
-     * @return Vm with the given ID, $null if not found
+     * @return Pod with the given ID, $null if not found
      * @pre $none
      * @post $none
      */

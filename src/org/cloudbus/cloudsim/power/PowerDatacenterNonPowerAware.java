@@ -11,11 +11,8 @@ package org.cloudbus.cloudsim.power;
 import java.util.List;
 import java.util.Map;
 
-import org.cloudbus.cloudsim.DatacenterCharacteristics;
-import org.cloudbus.cloudsim.Log;
-import org.cloudbus.cloudsim.Storage;
-import org.cloudbus.cloudsim.Vm;
-import org.cloudbus.cloudsim.VmAllocationPolicy;
+import org.cloudbus.cloudsim.*;
+import org.cloudbus.cloudsim.Pod;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.core.CloudSimTags;
 import org.cloudbus.cloudsim.core.predicates.PredicateType;
@@ -45,7 +42,7 @@ public class PowerDatacenterNonPowerAware extends PowerDatacenter {
 	 * @param name the datacenter name
 	 * @param characteristics the datacenter characteristics
 	 * @param schedulingInterval the scheduling interval
-	 * @param vmAllocationPolicy the vm provisioner
+	 * @param podAllocationPolicy the vm provisioner
 	 * @param storageList the storage list
 	 * 
 	 * @throws Exception the exception
@@ -53,10 +50,10 @@ public class PowerDatacenterNonPowerAware extends PowerDatacenter {
 	public PowerDatacenterNonPowerAware(
 			String name,
 			DatacenterCharacteristics characteristics,
-			VmAllocationPolicy vmAllocationPolicy,
+			PodAllocationPolicy podAllocationPolicy,
 			List<Storage> storageList,
 			double schedulingInterval) throws Exception {
-		super(name, characteristics, vmAllocationPolicy, storageList, schedulingInterval);
+		super(name, characteristics, podAllocationPolicy, storageList, schedulingInterval);
 	}
 
 	@Override
@@ -119,10 +116,10 @@ public class PowerDatacenterNonPowerAware extends PowerDatacenter {
 
 			/** Remove completed VMs **/
 			for (PowerHost host : this.<PowerHost> getHostList()) {
-				for (Vm vm : host.getCompletedVms()) {
-					getVmAllocationPolicy().deallocateHostForVm(vm);
-					getVmList().remove(vm);
-					Log.printLine("VM #" + vm.getId() + " has been deallocated from host #" + host.getId());
+				for (Pod pod : host.getCompletedVms()) {
+					getVmAllocationPolicy().deallocateHostForVm(pod);
+					getVmList().remove(pod);
+					Log.printLine("VM #" + pod.getId() + " has been deallocated from host #" + host.getId());
 				}
 			}
 
@@ -134,32 +131,32 @@ public class PowerDatacenterNonPowerAware extends PowerDatacenter {
 
 				if (migrationMap != null) {
 					for (Map<String, Object> migrate : migrationMap) {
-						Vm vm = (Vm) migrate.get("vm");
+						Pod pod = (Pod) migrate.get("pod");
 						PowerHost targetHost = (PowerHost) migrate.get("host");
-						PowerHost oldHost = (PowerHost) vm.getHost();
+						PowerHost oldHost = (PowerHost) pod.getHost();
 
 						if (oldHost == null) {
 							Log.formatLine(
 									"%.2f: Migration of VM #%d to Host #%d is started",
 									CloudSim.clock(),
-									vm.getId(),
+									pod.getId(),
 									targetHost.getId());
 						} else {
 							Log.formatLine(
 									"%.2f: Migration of VM #%d from Host #%d to Host #%d is started",
 									CloudSim.clock(),
-									vm.getId(),
+									pod.getId(),
 									oldHost.getId(),
 									targetHost.getId());
 						}
 
-						targetHost.addMigratingInVm(vm);
+						targetHost.addMigratingInVm(pod);
 						incrementMigrationCount();
 
 						/** VM migration delay = RAM / bandwidth + C (C = 10 sec) **/
 						send(
 								getId(),
-								vm.getRam() / ((double) vm.getBw() / 8000) + 10,
+								pod.getRam() / ((double) pod.getBw() / 8000) + 10,
 								CloudSimTags.VM_MIGRATE,
 								migrate);
 					}

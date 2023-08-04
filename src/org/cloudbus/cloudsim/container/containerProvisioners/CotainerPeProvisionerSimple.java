@@ -35,7 +35,7 @@ public class CotainerPeProvisionerSimple extends ContainerPeProvisioner {
     }
 
     /* (non-Javadoc)
-     * @see ContainerVmPeProvisioner#allocateMipsForContainer
+     * @see ContainerPodPeProvisioner#allocateMipsForContainer
      */
     @Override
     public boolean allocateMipsForContainer(Container container, double mips) {
@@ -45,7 +45,7 @@ public class CotainerPeProvisionerSimple extends ContainerPeProvisioner {
     }
 
     /* (non-Javadoc)
-     * @see ContainerVmPeProvisioner#allocateMipsForContainer(java.lang.String, double)
+     * @see ContainerPodPeProvisioner#allocateMipsForContainer(java.lang.String, double)
      */
     @Override
     public boolean allocateMipsForContainer(String containerUid, double mips) {
@@ -70,7 +70,7 @@ public class CotainerPeProvisionerSimple extends ContainerPeProvisioner {
     }
 
     /* (non-Javadoc)
-     * @see ContainerVmPeProvisioner#allocateMipsForContainer(Container, java.util.List)
+     * @see ContainerPodPeProvisioner#allocateMipsForContainer(Container, java.util.List)
      */
     @Override
     public boolean allocateMipsForContainer(Container container, List<Double> mips) {
@@ -112,7 +112,7 @@ public class CotainerPeProvisionerSimple extends ContainerPeProvisioner {
     }
 
     /* (non-Javadoc)
-     * @see ContainerVmPeProvisioner#getTotalAllocatedMipsForContainer
+     * @see ContainerPodPeProvisioner#getTotalAllocatedMipsForContainer
      */
     @Override
     public double getTotalAllocatedMipsForContainer(Container container) {
@@ -127,7 +127,7 @@ public class CotainerPeProvisionerSimple extends ContainerPeProvisioner {
     }
 
     /* (non-Javadoc)
-     * @see ContainerVmPeProvisioner#getAllocatedMipsForContainerByVirtualPeId(Container, int)
+     * @see ContainerPodPeProvisioner#getAllocatedMipsForContainerByVirtualPeId(Container, int)
      */
     @Override
     public double getAllocatedMipsForContainerByVirtualPeId(Container container,
@@ -142,7 +142,7 @@ public class CotainerPeProvisionerSimple extends ContainerPeProvisioner {
     }
 
     /* (non-Javadoc)
-     * @see ContainerVmPeProvisioner#deallocateMipsForContainer(Container)
+     * @see ContainerPodPeProvisioner#deallocateMipsForContainer(Container)
      */
     @Override
     public void deallocateMipsForContainer(Container container) {

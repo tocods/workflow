@@ -38,6 +38,11 @@ public class Container {
     private long size;
 
     /**
+     * The pod id
+     */
+    private String podId;
+
+    /**
      * The MIPS.
      */
     private double mips;
@@ -73,9 +78,9 @@ public class Container {
     private ContainerCloudletScheduler containerCloudletScheduler;
 
     /**
-     * The ContainerVm.
+     * The ContainerPod.
      */
-    private ContainerVm vm;
+    private ContainerPod vm;
 
     /**
      * In migration flag.
@@ -110,9 +115,9 @@ public class Container {
     /**
      * The mips allocation history.
      */
-    private final List<VmStateHistoryEntry> stateHistory = new LinkedList<VmStateHistoryEntry>();
+    private final List<PodStateHistoryEntry> stateHistory = new LinkedList<PodStateHistoryEntry>();
 
-//    added from the power Vm
+//    added from the power Pod
     /**
      * The Constant HISTORY_LENGTH.
      */
@@ -147,6 +152,7 @@ public class Container {
      * @param containerCloudletScheduler
      * @param schedulingInterval
      */
+
     public Container(
             int id,
             int userId,
@@ -474,7 +480,7 @@ public class Container {
      *
      * @return the vm
      */
-    public ContainerVm getVm() {
+    public ContainerPod getVm() {
         return vm;
     }
 
@@ -494,7 +500,7 @@ public class Container {
      * @pre vm != $null
      * @post $none
      */
-    public void setVm(ContainerVm vm) {
+    public void setVm(ContainerPod vm) {
         this.vm = vm;
     }
 
@@ -623,7 +629,7 @@ public class Container {
      *
      * @return the state history
      */
-    public List<VmStateHistoryEntry> getStateHistory() {
+    public List<PodStateHistoryEntry> getStateHistory() {
         return stateHistory;
     }
 
@@ -640,13 +646,13 @@ public class Container {
             double allocatedMips,
             double requestedMips,
             boolean isInMigration) {
-        VmStateHistoryEntry newState = new VmStateHistoryEntry(
+        PodStateHistoryEntry newState = new PodStateHistoryEntry(
                 time,
                 allocatedMips,
                 requestedMips,
                 isInMigration);
         if (!getStateHistory().isEmpty()) {
-            VmStateHistoryEntry previousState = getStateHistory().get(getStateHistory().size() - 1);
+            PodStateHistoryEntry previousState = getStateHistory().get(getStateHistory().size() - 1);
             if (previousState.getTime() == time) {
                 getStateHistory().set(getStateHistory().size() - 1, newState);
                 return;
@@ -836,5 +842,13 @@ public class Container {
      */
     public final int getState() {
         return this.state;
+    }
+
+    public final void setPodId(String id) {
+        this.podId = id;
+    }
+
+    public final String getPodId() {
+        return this.podId;
     }
 }

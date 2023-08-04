@@ -1,6 +1,6 @@
 package org.cloudbus.cloudsim.container.core;
 
-import org.cloudbus.cloudsim.container.lists.ContainerVmPeList;
+import org.cloudbus.cloudsim.container.lists.ContainerPodPeList;
 import org.cloudbus.cloudsim.core.CloudSim;
 
 import java.util.List;
@@ -187,7 +187,7 @@ public class ContainerDatacenterCharacteristics {
             return -1;
         }
 
-        return ContainerVmPeList.getMips(getHostList().get(0).getPeList(), 0);
+        return ContainerPodPeList.getMips(getHostList().get(0).getPeList(), 0);
     }
 
     /**
@@ -206,7 +206,7 @@ public class ContainerDatacenterCharacteristics {
             return -1;
         }
 
-        return ContainerVmPeList.getMips(ContainerHostList.getById(getHostList(), id).getPeList(), peId);
+        return ContainerPodPeList.getMips(ContainerHostList.getById(getHostList(), id).getPeList(), peId);
     }
 
     /**

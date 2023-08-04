@@ -17,9 +17,8 @@ package org.workflowsim.planning;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.cloudbus.cloudsim.Datacenter;
-import org.cloudbus.cloudsim.Vm;
-import org.cloudbus.cloudsim.container.core.ContainerVm;
+
+import org.cloudbus.cloudsim.container.core.ContainerPod;
 import org.wfc.core.WFCDatacenter;
 import org.workflowsim.Task;
 
@@ -40,7 +39,7 @@ public abstract class BasePlanningAlgorithm implements PlanningAlgorithmInterfac
     /**
      * the vm list.
      */
-    private List<? extends ContainerVm> vmList;
+    private List<? extends ContainerPod> vmList;
 
     /**
      * the datacenter list

@@ -12,7 +12,7 @@ import java.util.List;
 
 import org.cloudbus.cloudsim.HostDynamicWorkload;
 import org.cloudbus.cloudsim.Pe;
-import org.cloudbus.cloudsim.VmScheduler;
+import org.cloudbus.cloudsim.PodScheduler;
 import org.cloudbus.cloudsim.power.models.PowerModel;
 import org.cloudbus.cloudsim.provisioners.BwProvisioner;
 import org.cloudbus.cloudsim.provisioners.RamProvisioner;
@@ -46,7 +46,7 @@ public class PowerHost extends HostDynamicWorkload {
 	 * @param bwProvisioner the bw provisioner
 	 * @param storage the storage capacity
 	 * @param peList the host's PEs list
-	 * @param vmScheduler the VM scheduler
+	 * @param podScheduler the VM scheduler
 	 */
 	public PowerHost(
 			int id,
@@ -54,9 +54,9 @@ public class PowerHost extends HostDynamicWorkload {
 			BwProvisioner bwProvisioner,
 			long storage,
 			List<? extends Pe> peList,
-			VmScheduler vmScheduler,
+			PodScheduler podScheduler,
 			PowerModel powerModel) {
-		super(id, ramProvisioner, bwProvisioner, storage, peList, vmScheduler);
+		super(id, ramProvisioner, bwProvisioner, storage, peList, podScheduler);
 		setPowerModel(powerModel);
 	}
 

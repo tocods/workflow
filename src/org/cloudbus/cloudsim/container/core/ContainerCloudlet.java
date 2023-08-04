@@ -4,12 +4,18 @@ import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.UtilizationModel;
 
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Created by sareh on 10/07/15.
  */
 public class ContainerCloudlet extends Cloudlet {
     public int containerId = -1;
+
+    public Boolean ifJob() {
+        return false;
+    }
 
 
     public ContainerCloudlet(int cloudletId, long cloudletLength, int pesNumber, long cloudletFileSize, long cloudletOutputSize, UtilizationModel utilizationModelCpu, UtilizationModel utilizationModelRam, UtilizationModel utilizationModelBw) {
@@ -36,6 +42,9 @@ public class ContainerCloudlet extends Cloudlet {
     }
 
     public void setContainerId(int containerId) {
+        if(ifJob()) {
+            Logger.getGlobal().log(Level.INFO, "set job " + this.getCloudletId() + "'s container ID " + containerId);
+        }
         this.containerId = containerId;       
     }
     

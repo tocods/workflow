@@ -2,10 +2,9 @@ package org.wfc.scheduler;
 
 import org.cloudbus.cloudsim.container.core.*;
 import org.cloudbus.cloudsim.container.lists.ContainerList;
-import org.cloudbus.cloudsim.container.lists.ContainerVmList;
-import org.apache.commons.math3.stat.descriptive.rank.Percentile;
+import org.cloudbus.cloudsim.container.lists.ContainerPodList;
+//import org.apache.commons.math3.stat.descriptive.rank.Percentile;
 import org.cloudbus.cloudsim.Log;
-import org.cloudbus.cloudsim.UtilizationModelPlanetLabInMemory;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.core.CloudSimTags;
 import org.cloudbus.cloudsim.core.SimEntity;
@@ -41,12 +40,12 @@ public class WFCScheduler extends SimEntity {
     /**
      * The vm list.
      */
-    protected List<? extends ContainerVm> vmList;
+    protected List<? extends ContainerPod> vmList;
 
     /**
      * The vms created list.
      */
-    protected List<? extends ContainerVm> vmsCreatedList;
+    protected List<? extends ContainerPod> vmsCreatedList;
 /**
      * The containers created list.
      */
@@ -144,9 +143,9 @@ public class WFCScheduler extends SimEntity {
     public WFCScheduler(String name, double overBookingfactor) throws Exception {
         super(name);
 
-        setVmList(new ArrayList<ContainerVm>());
+        setVmList(new ArrayList<ContainerPod>());
         setContainerList(new ArrayList<Container>());
-        setVmsCreatedList(new ArrayList<ContainerVm>());
+        setVmsCreatedList(new ArrayList<ContainerPod>());
         setContainersCreatedList(new ArrayList<Container>());
         setCloudletList(new ArrayList<ContainerCloudlet>());
         setCloudletSubmittedList(new ArrayList<ContainerCloudlet>());
@@ -174,7 +173,7 @@ public class WFCScheduler extends SimEntity {
      * @pre list !=null
      * @post $none
      */
-    public void submitVmList(List<? extends ContainerVm> list) {
+    public void submitVmList(List<? extends ContainerPod> list) {
         getVmList().addAll(list);
     }
 
@@ -200,7 +199,7 @@ public class WFCScheduler extends SimEntity {
      */
     public void bindCloudletToVm(int cloudletId, int vmId) {
         CloudletList.getById(getCloudletList(), cloudletId).setVmId(vmId);
-//        Log.printConcatLine("The Vm ID is ",  CloudletList.getById(getCloudletList(), cloudletId).getVmId(), "should be", vmId);
+//        Log.printConcatLine("The Pod ID is ",  CloudletList.getById(getCloudletList(), cloudletId).getVmId(), "should be", vmId);
     }
     /**
      * Specifies that a given cloudlet must run in a specific virtual machine.
@@ -284,15 +283,15 @@ public class WFCScheduler extends SimEntity {
 
         if (result == CloudSimTags.TRUE) {
             if(vmId ==-1){
-                Log.printConcatLine("Error : Where is the VM");}
+                Log.printConcatLine("Error : Where is the VM (VM Id = -1)");}
             else{
             getContainersToVmsMap().put(containerId, vmId);
             getContainersCreatedList().add(ContainerList.getById(getContainerList(), containerId));
 
-//            ContainerVm p= ContainerVmList.getById(getVmsCreatedList(), vmId);
-            int hostId = ContainerVmList.getById(getVmsCreatedList(), vmId).getHost().getId();
+//            ContainerPod p= ContainerPodList.getById(getVmsCreatedList(), vmId);
+            int hostId = ContainerPodList.getById(getVmsCreatedList(), vmId).getHost().getId();
             Log.printConcatLine(CloudSim.clock(), ": ", getName(), ": The Container #", containerId,
-                     ", is created on Vm #",vmId
+                     ", is created on Pod #",vmId
                     , ", On Host#", hostId);
             setContainersCreated(getContainersCreated()+1);}
         } else {
@@ -359,15 +358,15 @@ public class WFCScheduler extends SimEntity {
         Map<String, Object> map = (Map<String, Object>) ev.getData();
         int datacenterId = (int) map.get("datacenterID");
         int result = (int) map.get("result");
-        ContainerVm containerVm = (ContainerVm) map.get("vm");
-        int vmId = containerVm.getId();
+        ContainerPod containerPod = (ContainerPod) map.get("vm");
+        int vmId = containerPod.getId();
         if (result == CloudSimTags.TRUE) {
-            getVmList().add(containerVm);
+            getVmList().add(containerPod);
             getVmsToDatacentersMap().put(vmId, datacenterId);
-            getVmsCreatedList().add(containerVm);
+            getVmsCreatedList().add(containerPod);
             Log.printConcatLine(CloudSim.clock(), ": ", getName(), ": VM #", vmId,
                     " has been created in Datacenter #", datacenterId, ", Host #",
-                    ContainerVmList.getById(getVmsCreatedList(), vmId).getHost().getId());
+                    ContainerPodList.getById(getVmsCreatedList(), vmId).getHost().getId());
         } else {
             Log.printConcatLine(CloudSim.clock(), ": ", getName(), ": Creation of VM #", vmId,
                     " failed in Datacenter #", datacenterId);
@@ -388,10 +387,10 @@ public class WFCScheduler extends SimEntity {
 
         if (result == CloudSimTags.TRUE) {
             getVmsToDatacentersMap().put(vmId, datacenterId);
-            getVmsCreatedList().add(ContainerVmList.getById(getVmList(), vmId));
+            getVmsCreatedList().add(ContainerPodList.getById(getVmList(), vmId));
             Log.printConcatLine(CloudSim.clock(), ": ", getName(), ": VM #", vmId,
                     " has been created in Datacenter #", datacenterId, ", Host #",
-                    ContainerVmList.getById(getVmsCreatedList(), vmId).getHost().getId());
+                    ContainerPodList.getById(getVmsCreatedList(), vmId).getHost().getId());
             setNumberOfCreatedVMs(getNumberOfCreatedVMs()+1);
         } else {
             Log.printConcatLine(CloudSim.clock(), ": ", getName(), ": Creation of VM #", vmId,
@@ -448,10 +447,11 @@ public class WFCScheduler extends SimEntity {
         //*from wfScheduler                
         
         
-        //ContainerVm vm = (ContainerVm) getVmsCreatedList().get(cloudlet.getVmId());
-        ContainerVm vm= ContainerVmList.getById(getVmsCreatedList(), cloudlet.getVmId());
+        //ContainerPod vm = (ContainerPod) getVmsCreatedList().get(cloudlet.getVmId());
+        ContainerPod vm= ContainerPodList.getById(getVmsCreatedList(), cloudlet.getVmId());
+        Container container = vm.getContainer(cloudlet.getContainerId(), cloudlet.getUserId());
         //so that this resource is released
-        vm.setState(WorkflowSimTags.VM_STATUS_IDLE);
+        container.setState(WorkflowSimTags.VM_STATUS_IDLE);
 
         double delay = 0.0;
         if (Parameters.getOverheadParams().getPostDelay() != null) {
@@ -493,7 +493,7 @@ public class WFCScheduler extends SimEntity {
         // send as much vms as possible for this datacenter before trying the next one
         int requestedVms = 0;
         String datacenterName = CloudSim.getEntityName(datacenterId);
-        for (ContainerVm vm : getVmList()) {
+        for (ContainerPod vm : getVmList()) {
             if (!getVmsToDatacentersMap().containsKey(vm.getId())) {
                 Log.printLine(String.format("%s: %s: Trying to Create VM #%d in %s", CloudSim.clock(), getName(), vm.getId(), datacenterName));
                 sendNow(datacenterId, CloudSimTags.VM_CREATE_ACK, vm);
@@ -516,7 +516,7 @@ public class WFCScheduler extends SimEntity {
      * @post $none
      */
     protected void clearDatacenters() {
-        for (ContainerVm vm : getVmsCreatedList()) {
+        for (ContainerPod vm : getVmsCreatedList()) {
 //            Log.printConcatLine(CloudSim.clock(), ": " + getName(), ": Destroying VM #", vm.getId());
             sendNow(getVmsToDatacentersMap().get(vm.getId()), CloudSimTags.VM_DESTROY, vm);
         }
@@ -575,7 +575,7 @@ public class WFCScheduler extends SimEntity {
      * @return the vm list
      */
     @SuppressWarnings("unchecked")
-    public <T extends ContainerVm> List<T> getVmList() {
+    public <T extends ContainerPod> List<T> getVmList() {
         return (List<T>) vmList;
     }
 
@@ -585,7 +585,7 @@ public class WFCScheduler extends SimEntity {
      * @param <T>    the generic type
      * @param vmList the new vm list
      */
-    protected <T extends ContainerVm> void setVmList(List<T> vmList) {
+    protected <T extends ContainerPod> void setVmList(List<T> vmList) {
         this.vmList = vmList;
     }
 
@@ -659,7 +659,7 @@ public class WFCScheduler extends SimEntity {
      * @return the vm list
      */
     @SuppressWarnings("unchecked")
-    public <T extends ContainerVm> List<T> getVmsCreatedList() {
+    public <T extends ContainerPod> List<T> getVmsCreatedList() {
         return (List<T>) vmsCreatedList;
     }
 
@@ -669,7 +669,7 @@ public class WFCScheduler extends SimEntity {
      * @param <T>            the generic type
      * @param vmsCreatedList the vms created list
      */
-    protected <T extends ContainerVm> void setVmsCreatedList(List<T> vmsCreatedList) {
+    protected <T extends ContainerPod> void setVmsCreatedList(List<T> vmsCreatedList) {
         this.vmsCreatedList = vmsCreatedList;
     }
 
@@ -979,18 +979,22 @@ public class WFCScheduler extends SimEntity {
             //by arman I commented log  e.printStackTrace();
         }
 
-        
+        //Log.printLine("asasasasasa" + scheduledList.size());
                
         int containerIndex = 0;
         List<ContainerCloudlet> successfullySubmitted = new ArrayList<>();
 
         for (ContainerCloudlet cloudlet : scheduledList) {
-
             if (containerIndex < getContainersCreated()) {                            
                 if(getContainersToVmsMap().get(cloudlet.getCloudletId()) != null) {
                     int vmId = getContainersToVmsMap().get(cloudlet.getCloudletId());
-                    cloudlet.setVmId(vmId);
-                    cloudlet.setContainerId(cloudlet.getCloudletId());
+                    if(cloudlet.ifJob()) {
+                        Log.printLine("asasaddddd   ===> job: " + cloudlet.getCloudletId() + cloudlet.getContainerId());
+                    } else {
+                        cloudlet.setVmId(vmId);
+                        cloudlet.setContainerId(cloudlet.getCloudletId());
+                    }
+                    //cloudlet.setContainerId();
                     containerIndex++;
                     //sendNow(getDatacenterIdsList().get(0), CloudSimTags.CLOUDLET_SUBMIT, cloudlet);
                     cloudletsSubmitted++;

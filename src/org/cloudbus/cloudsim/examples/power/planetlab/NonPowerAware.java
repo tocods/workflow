@@ -7,13 +7,13 @@ import java.util.List;
 import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.DatacenterBroker;
 import org.cloudbus.cloudsim.Log;
-import org.cloudbus.cloudsim.Vm;
+import org.cloudbus.cloudsim.Pod;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.examples.power.Constants;
 import org.cloudbus.cloudsim.examples.power.Helper;
 import org.cloudbus.cloudsim.power.PowerDatacenterNonPowerAware;
 import org.cloudbus.cloudsim.power.PowerHost;
-import org.cloudbus.cloudsim.power.PowerVmAllocationPolicySimple;
+import org.cloudbus.cloudsim.power.PowerPodAllocationPolicySimple;
 
 /**
  * A simulation of a heterogeneous non-power aware data center: all hosts consume maximum power all
@@ -58,18 +58,18 @@ public class NonPowerAware {
 			int brokerId = broker.getId();
 
 			List<Cloudlet> cloudletList = PlanetLabHelper.createCloudletListPlanetLab(brokerId, inputFolder);
-			List<Vm> vmList = Helper.createVmList(brokerId, cloudletList.size());
+			List<Pod> podList = Helper.createVmList(brokerId, cloudletList.size());
 			List<PowerHost> hostList = Helper.createHostList(PlanetLabConstants.NUMBER_OF_HOSTS);
 
 			PowerDatacenterNonPowerAware datacenter = (PowerDatacenterNonPowerAware) Helper.createDatacenter(
 					"Datacenter",
 					PowerDatacenterNonPowerAware.class,
 					hostList,
-					new PowerVmAllocationPolicySimple(hostList));
+					new PowerPodAllocationPolicySimple(hostList));
 
 			datacenter.setDisableMigrations(true);
 
-			broker.submitVmList(vmList);
+			broker.submitVmList(podList);
 			broker.submitCloudletList(cloudletList);
 
 			CloudSim.terminateSimulation(Constants.SIMULATION_LIMIT);
@@ -82,7 +82,7 @@ public class NonPowerAware {
 
 			Helper.printResults(
 					datacenter,
-					vmList,
+                    podList,
 					lastClock,
 					experimentName,
 					Constants.OUTPUT_CSV,

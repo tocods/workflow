@@ -15,21 +15,8 @@ import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.cloudbus.cloudsim.Cloudlet;
-import org.cloudbus.cloudsim.CloudletSchedulerTimeShared;
-import org.cloudbus.cloudsim.Datacenter;
-import org.cloudbus.cloudsim.DatacenterBroker;
-import org.cloudbus.cloudsim.DatacenterCharacteristics;
-import org.cloudbus.cloudsim.Host;
-import org.cloudbus.cloudsim.Log;
-import org.cloudbus.cloudsim.NetworkTopology;
-import org.cloudbus.cloudsim.Pe;
-import org.cloudbus.cloudsim.Storage;
-import org.cloudbus.cloudsim.UtilizationModel;
-import org.cloudbus.cloudsim.UtilizationModelFull;
-import org.cloudbus.cloudsim.Vm;
-import org.cloudbus.cloudsim.VmAllocationPolicySimple;
-import org.cloudbus.cloudsim.VmSchedulerTimeShared;
+import org.cloudbus.cloudsim.*;
+import org.cloudbus.cloudsim.Pod;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.provisioners.BwProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.PeProvisionerSimple;
@@ -46,7 +33,7 @@ public class NetworkExample1 {
 	private static List<Cloudlet> cloudletList;
 
 	/** The vmlist. */
-	private static List<Vm> vmlist;
+	private static List<Pod> vmlist;
 
 	/**
 	 * Creates main() to run this example
@@ -74,7 +61,7 @@ public class NetworkExample1 {
 			int brokerId = broker.getId();
 
 			//Fourth step: Create one virtual machine
-			vmlist = new ArrayList<Vm>();
+			vmlist = new ArrayList<Pod>();
 
 			//VM description
 			int vmid = 0;
@@ -86,10 +73,10 @@ public class NetworkExample1 {
 			String vmm = "Xen"; //VMM name
 
 			//create VM
-			Vm vm1 = new Vm(vmid, brokerId, mips, pesNumber, ram, bw, size, vmm, new CloudletSchedulerTimeShared());
+			Pod pod1 = new Pod(vmid, brokerId, mips, pesNumber, ram, bw, size, vmm, new CloudletSchedulerTimeShared());
 
-			//add the VM to the vmList
-			vmlist.add(vm1);
+			//add the VM to the podList
+			vmlist.add(pod1);
 
 			//submit vm list to the broker
 			broker.submitVmList(vmlist);
@@ -176,7 +163,7 @@ public class NetworkExample1 {
 					new BwProvisionerSimple(bw),
 					storage,
 					peList,
-					new VmSchedulerTimeShared(peList)
+					new PodSchedulerTimeShared(peList)
 				)
 			); // This is our machine
 
@@ -202,7 +189,7 @@ public class NetworkExample1 {
 		// 6. Finally, we need to create a PowerDatacenter object.
 		Datacenter datacenter = null;
 		try {
-			datacenter = new Datacenter(name, characteristics, new VmAllocationPolicySimple(hostList), storageList, 0);
+			datacenter = new Datacenter(name, characteristics, new PodAllocationPolicySimple(hostList), storageList, 0);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

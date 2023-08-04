@@ -3,9 +3,8 @@ package org.wfc.core;
 //import cloudSimGr.containerCloudSim.Experiments.HelperEx;
 //import cloudSimGr.containerCloudSim.Experiments.Paper1.RunnerAbs;
 import org.cloudbus.cloudsim.container.core.*;
-import org.wfc.core.WFCDatacenter;
 import org.cloudbus.cloudsim.container.resourceAllocators.ContainerAllocationPolicy;
-import org.cloudbus.cloudsim.container.resourceAllocators.ContainerVmAllocationPolicy;
+import org.cloudbus.cloudsim.container.resourceAllocators.ContainerPodAllocationPolicy;
 import org.cloudbus.cloudsim.container.utils.CostumeCSVWriter;
 import org.cloudbus.cloudsim.Log;
 import org.cloudbus.cloudsim.Storage;
@@ -75,7 +74,7 @@ public class WFCPowerContainerDatacenter extends WFCDatacenter {
     public WFCPowerContainerDatacenter(
             String name,
             ContainerDatacenterCharacteristics characteristics,
-            ContainerVmAllocationPolicy vmAllocationPolicy,
+            ContainerPodAllocationPolicy vmAllocationPolicy,
             ContainerAllocationPolicy containerAllocationPolicy,
             List<Storage> storageList,
             double schedulingInterval, String experimentName, String logAddress) throws Exception {
@@ -131,7 +130,7 @@ public class WFCPowerContainerDatacenter extends WFCDatacenter {
                 int previousMigrationCount = getVmMigrationCount();
                 if (migrationMap != null) {
                     for (Map<String, Object> migrate : migrationMap) {
-                        ContainerVm vm = (ContainerVm) migrate.get("vm");
+                        ContainerPod vm = (ContainerPod) migrate.get("vm");
                         PowerContainerHost targetHost = (PowerContainerHost) migrate.get("host");
                         PowerContainerHost oldHost = (PowerContainerHost) vm.getHost();
 
@@ -280,7 +279,7 @@ public class WFCPowerContainerDatacenter extends WFCDatacenter {
         int numberOfActiveHosts =0;
         /** Remove completed VMs **/
         for (PowerContainerHost host : this.<PowerContainerHost>getHostList()) {
-            for (ContainerVm vm : host.getCompletedVms()) {
+            for (ContainerPod vm : host.getCompletedVms()) {
                 getVmAllocationPolicy().deallocateHostForVm(vm);
                 getContainerVmList().remove(vm);
                 Log.printLine(String.format("VM #%d has been deallocated from host #%d", vm.getId(), host.getId()));
@@ -372,7 +371,7 @@ public class WFCPowerContainerDatacenter extends WFCDatacenter {
      */
     protected boolean isInMigration() {
         boolean result = false;
-        for (ContainerVm vm : getContainerVmList()) {
+        for (ContainerPod vm : getContainerVmList()) {
             if (vm.isInMigration()) {
                 result = true;
                 break;
@@ -502,9 +501,9 @@ public class WFCPowerContainerDatacenter extends WFCDatacenter {
     public void updateNumberOfVmsContainers() {
         setNumberOfVms(0);
         setNumberOfContainers(0);
-        List<ContainerVm> temp= new ArrayList<>();
+        List<ContainerPod> temp= new ArrayList<>();
         for(ContainerHost host:getHostList()) {
-            for (ContainerVm vm : host.getVmList()) {
+            for (ContainerPod vm : host.getVmList()) {
                 if (!temp.contains(vm)) {
                     int tempNumbers = this.getNumberOfVms() + 1;
                     setNumberOfVms(tempNumbers);

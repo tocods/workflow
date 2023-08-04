@@ -8,7 +8,7 @@
 
 package org.cloudbus.cloudsim.provisioners;
 
-import org.cloudbus.cloudsim.Vm;
+import org.cloudbus.cloudsim.Pod;
 
 /**
  * BwProvisioner is an abstract class that represents the provisioning policy used by a host
@@ -46,7 +46,7 @@ public abstract class BwProvisioner {
 	/**
 	 * Allocates BW for a given VM.
 	 * 
-	 * @param vm the virtual machine for which the bw are being allocated
+	 * @param pod the virtual machine for which the bw are being allocated
 	 * @param bw the bw to be allocated to the VM
 	 * 
 	 * @return $true if the bw could be allocated; $false otherwise
@@ -54,26 +54,26 @@ public abstract class BwProvisioner {
 	 * @pre $none
 	 * @post $none
 	 */
-	public abstract boolean allocateBwForVm(Vm vm, long bw);
+	public abstract boolean allocateBwForVm(Pod pod, long bw);
 
 	/**
 	 * Gets the allocated BW for VM.
 	 * 
-	 * @param vm the VM
+	 * @param pod the VM
 	 * 
-	 * @return the allocated BW for vm
+	 * @return the allocated BW for pod
 	 */
-	public abstract long getAllocatedBwForVm(Vm vm);
+	public abstract long getAllocatedBwForVm(Pod pod);
 
 	/**
 	 * Releases BW used by a VM.
 	 * 
-	 * @param vm the vm
+	 * @param pod the pod
 	 * 
 	 * @pre $none
 	 * @post none
 	 */
-	public abstract void deallocateBwForVm(Vm vm);
+	public abstract void deallocateBwForVm(Pod pod);
 
 	/**
 	 * Releases BW used by all VMs.
@@ -89,13 +89,13 @@ public abstract class BwProvisioner {
 	 * Checks if it is possible to change the current allocated BW for the VM
          * to a new amount, depending on the available BW.
 	 * 
-	 * @param vm the vm to check if there is enough available BW on the host to 
+	 * @param pod the pod to check if there is enough available BW on the host to
          * change the VM allocated BW
 	 * @param bw the new total amount of BW for the VM.
 	 * 
-	 * @return true, if is suitable for vm
+	 * @return true, if is suitable for pod
 	 */
-	public abstract boolean isSuitableForVm(Vm vm, long bw);
+	public abstract boolean isSuitableForVm(Pod pod, long bw);
 
 	/**
 	 * Gets the bw capacity.

@@ -42,7 +42,7 @@ public class HostDynamicWorkload extends Host {
 	 * @param bwProvisioner the bw provisioner
 	 * @param storage the storage capacity
 	 * @param peList the host's PEs list
-	 * @param vmScheduler the VM scheduler
+	 * @param podScheduler the VM scheduler
 	 */
 	public HostDynamicWorkload(
 			int id,
@@ -50,8 +50,8 @@ public class HostDynamicWorkload extends Host {
 			BwProvisioner bwProvisioner,
 			long storage,
 			List<? extends Pe> peList,
-			VmScheduler vmScheduler) {
-		super(id, ramProvisioner, bwProvisioner, storage, peList, vmScheduler);
+			PodScheduler podScheduler) {
+		super(id, ramProvisioner, bwProvisioner, storage, peList, podScheduler);
 		setUtilizationMips(0);
 		setPreviousUtilizationMips(0);
 	}
@@ -63,60 +63,60 @@ public class HostDynamicWorkload extends Host {
 		setUtilizationMips(0);
 		double hostTotalRequestedMips = 0;
 
-		for (Vm vm : getVmList()) {
-			getVmScheduler().deallocatePesForVm(vm);
+		for (Pod pod : getVmList()) {
+			getVmScheduler().deallocatePesForVm(pod);
 		}
 
-		for (Vm vm : getVmList()) {
-			getVmScheduler().allocatePesForVm(vm, vm.getCurrentRequestedMips());
+		for (Pod pod : getVmList()) {
+			getVmScheduler().allocatePesForVm(pod, pod.getCurrentRequestedMips());
 		}
 
-		for (Vm vm : getVmList()) {
-			double totalRequestedMips = vm.getCurrentRequestedTotalMips();
-			double totalAllocatedMips = getVmScheduler().getTotalAllocatedMipsForVm(vm);
+		for (Pod pod : getVmList()) {
+			double totalRequestedMips = pod.getCurrentRequestedTotalMips();
+			double totalAllocatedMips = getVmScheduler().getTotalAllocatedMipsForVm(pod);
 
 			if (!Log.isDisabled()) {
 				/*by arman I commented Log.formatLine(
-						"%.2f: [Host #" + getId() + "] Total allocated MIPS for VM #" + vm.getId()
-								+ " (Host #" + vm.getHost().getId()
+						"%.2f: [Host #" + getId() + "] Total allocated MIPS for VM #" + pod.getId()
+								+ " (Host #" + pod.getHost().getId()
 								+ ") is %.2f, was requested %.2f out of total %.2f (%.2f%%)",
 						CloudSim.clock(),
 						totalAllocatedMips,
 						totalRequestedMips,
-						vm.getMips(),
-						totalRequestedMips / vm.getMips() * 100);
+						pod.getMips(),
+						totalRequestedMips / pod.getMips() * 100);
                                 */
-				List<Pe> pes = getVmScheduler().getPesAllocatedForVM(vm);
+				List<Pe> pes = getVmScheduler().getPesAllocatedForVM(pod);
 				StringBuilder pesString = new StringBuilder();
 				for (Pe pe : pes) {
 					pesString.append(String.format(" PE #" + pe.getId() + ": %.2f.", pe.getPeProvisioner()
-							.getTotalAllocatedMipsForVm(vm)));
+							.getTotalAllocatedMipsForVm(pod)));
 				}
 				Log.formatLine(
-						"%.2f: [Host #" + getId() + "] MIPS for VM #" + vm.getId() + " by PEs ("
+						"%.2f: [Host #" + getId() + "] MIPS for VM #" + pod.getId() + " by PEs ("
 								+ getNumberOfPes() + " * " + getVmScheduler().getPeCapacity() + ")."
 								+ pesString,
 						CloudSim.clock());
 			}
 
-			if (getVmsMigratingIn().contains(vm)) {
-				Log.formatLine("%.2f: [Host #" + getId() + "] VM #" + vm.getId()
+			if (getVmsMigratingIn().contains(pod)) {
+				Log.formatLine("%.2f: [Host #" + getId() + "] VM #" + pod.getId()
 						+ " is being migrated to Host #" + getId(), CloudSim.clock());
 			} else {
 				if (totalAllocatedMips + 0.1 < totalRequestedMips) {
-					Log.formatLine("%.2f: [Host #" + getId() + "] Under allocated MIPS for VM #" + vm.getId()
+					Log.formatLine("%.2f: [Host #" + getId() + "] Under allocated MIPS for VM #" + pod.getId()
 							+ ": %.2f", CloudSim.clock(), totalRequestedMips - totalAllocatedMips);
 				}
 
-				vm.addStateHistoryEntry(
+				pod.addStateHistoryEntry(
 						currentTime,
 						totalAllocatedMips,
 						totalRequestedMips,
-						(vm.isInMigration() && !getVmsMigratingIn().contains(vm)));
+						(pod.isInMigration() && !getVmsMigratingIn().contains(pod)));
 
-				if (vm.isInMigration()) {
+				if (pod.isInMigration()) {
 					Log.formatLine(
-							"%.2f: [Host #" + getId() + "] VM #" + vm.getId() + " is in migration",
+							"%.2f: [Host #" + getId() + "] VM #" + pod.getId() + " is in migration",
 							CloudSim.clock());
 					totalAllocatedMips /= 0.9; // performance degradation due to migration - 10%
 				}
@@ -140,14 +140,14 @@ public class HostDynamicWorkload extends Host {
 	 * 
 	 * @return the completed vms
 	 */
-	public List<Vm> getCompletedVms() {
-		List<Vm> vmsToRemove = new ArrayList<Vm>();
-		for (Vm vm : getVmList()) {
-			if (vm.isInMigration()) {
+	public List<Pod> getCompletedVms() {
+		List<Pod> vmsToRemove = new ArrayList<Pod>();
+		for (Pod pod : getVmList()) {
+			if (pod.isInMigration()) {
 				continue;
 			}
-			if (vm.getCurrentRequestedTotalMips() == 0) {
-				vmsToRemove.add(vm);
+			if (pod.getCurrentRequestedTotalMips() == 0) {
+				vmsToRemove.add(pod);
 			}
 		}
 		return vmsToRemove;
@@ -165,11 +165,11 @@ public class HostDynamicWorkload extends Host {
 	/**
 	 * Gets the max utilization percentage among by all PEs allocated to a VM.
 	 * 
-	 * @param vm the vm
+	 * @param pod the pod
 	 * @return the max utilization percentage of the VM
 	 */
-	public double getMaxUtilizationAmongVmsPes(Vm vm) {
-		return PeList.getMaxUtilizationAmongVmsPes(getPeList(), vm);
+	public double getMaxUtilizationAmongVmsPes(Pod pod) {
+		return PeList.getMaxUtilizationAmongVmsPes(getPeList(), pod);
 	}
 
 	/**

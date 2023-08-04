@@ -22,8 +22,7 @@ import java.util.List;
 import java.util.Map;
 import org.cloudbus.cloudsim.Consts;
 import org.cloudbus.cloudsim.Log;
-import org.cloudbus.cloudsim.container.core.ContainerVm;
-import org.workflowsim.CondorVM;
+import org.cloudbus.cloudsim.container.core.ContainerPod;
 import org.workflowsim.FileItem;
 import org.workflowsim.Task;
 import org.workflowsim.utils.Parameters;
@@ -36,10 +35,10 @@ import org.workflowsim.utils.Parameters;
  */
 public class HEFTPlanningAlgorithm extends BasePlanningAlgorithm {
 
-    private Map<Task, Map<ContainerVm, Double>> computationCosts;
+    private Map<Task, Map<ContainerPod, Double>> computationCosts;
     private Map<Task, Map<Task, Double>> transferCosts;
     private Map<Task, Double> rank;
-    private Map<ContainerVm, List<Event>> schedules;
+    private Map<ContainerPod, List<Event>> schedules;
     private Map<Task, Double> earliestFinishTimes;
     private double averageBandwidth;
 
@@ -89,7 +88,7 @@ public class HEFTPlanningAlgorithm extends BasePlanningAlgorithm {
         averageBandwidth = calculateAverageBandwidth();
 
         for (Object vmObject : getVmList()) {
-            ContainerVm vm = (ContainerVm) vmObject;
+            ContainerPod vm = (ContainerPod) vmObject;
             schedules.put(vm, new ArrayList<>());
         }
 
@@ -110,7 +109,7 @@ public class HEFTPlanningAlgorithm extends BasePlanningAlgorithm {
     private double calculateAverageBandwidth() {
         double avg = 0.0;
         for (Object vmObject : getVmList()) {
-            ContainerVm vm = (ContainerVm) vmObject;
+            ContainerPod vm = (ContainerPod) vmObject;
             avg += vm.getBw();
         }
         return avg / getVmList().size();
@@ -122,9 +121,9 @@ public class HEFTPlanningAlgorithm extends BasePlanningAlgorithm {
      */
     private void calculateComputationCosts() {
         for (Task task : getTaskList()) {
-            Map<ContainerVm, Double> costsVm = new HashMap<>();
+            Map<ContainerPod, Double> costsVm = new HashMap<>();
             for (Object vmObject : getVmList()) {
-                ContainerVm vm = (ContainerVm) vmObject;
+                ContainerPod vm = (ContainerPod) vmObject;
                 if (vm.getNumberOfPes() < task.getNumberOfPes()) {
                     costsVm.put(vm, Double.MAX_VALUE);
                 } else {
@@ -259,13 +258,13 @@ public class HEFTPlanningAlgorithm extends BasePlanningAlgorithm {
      * @pre All parent tasks are already scheduled
      */
     private void allocateTask(Task task) {
-        ContainerVm chosenVM = null;
+        ContainerPod chosenVM = null;
         double earliestFinishTime = Double.MAX_VALUE;
         double bestReadyTime = 0.0;
         double finishTime;
 
         for (Object vmObject : getVmList()) {
-            ContainerVm vm = (ContainerVm) vmObject;
+            ContainerPod vm = (ContainerPod) vmObject;
             double minReadyTime = 0.0;
 
             for (Task parent : task.getParentList()) {
@@ -303,8 +302,8 @@ public class HEFTPlanningAlgorithm extends BasePlanningAlgorithm {
      * @param occupySlot If true, reserves the time slot in the schedule.
      * @return The minimal finish time of the task in the vmn
      */
-    private double findFinishTime(Task task, ContainerVm vm, double readyTime,
-            boolean occupySlot) {
+    private double findFinishTime(Task task, ContainerPod vm, double readyTime,
+                                  boolean occupySlot) {
         List<Event> sched = schedules.get(vm);
         double computationCost = computationCosts.get(task).get(vm);
         double start, finish;

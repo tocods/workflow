@@ -2,7 +2,7 @@ package org.cloudbus.cloudsim.container.resourceAllocators;
 
 import org.cloudbus.cloudsim.container.containerPlacementPolicies.ContainerPlacementPolicy;
 import org.cloudbus.cloudsim.container.core.Container;
-import org.cloudbus.cloudsim.container.core.ContainerVm;
+import org.cloudbus.cloudsim.container.core.ContainerPod;
 
 import java.util.*;
 
@@ -23,24 +23,24 @@ public class ContainerAllocationPolicyRS extends  PowerContainerAllocationPolicy
 
 
     @Override
-    public ContainerVm findVmForContainer(Container container) {
+    public ContainerPod findVmForContainer(Container container) {
 
-        Set<ContainerVm> excludedVmList = new HashSet<>();
+        Set<ContainerPod> excludedVmList = new HashSet<>();
         int tries = 0;
         boolean found = false;
         do{
 
-            ContainerVm containerVm = getContainerPlacementPolicy().getContainerVm(getContainerVmList(), container,excludedVmList);
-            if(containerVm == null){
+            ContainerPod containerPod = getContainerPlacementPolicy().getContainerVm(getContainerVmList(), container,excludedVmList);
+            if(containerPod == null){
 
                 return null;
             }
-            if (containerVm.isSuitableForContainer(container)) {
+            if (containerPod.isSuitableForContainer(container)) {
                 found = true;
-                return containerVm;
+                return containerPod;
             }
             else {
-                    excludedVmList.add(containerVm);
+                    excludedVmList.add(containerPod);
                     tries ++;
                 }
 

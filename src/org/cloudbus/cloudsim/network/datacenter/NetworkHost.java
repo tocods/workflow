@@ -14,12 +14,12 @@ import java.util.Map.Entry;
 
 import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.Pe;
-import org.cloudbus.cloudsim.Vm;
-import org.cloudbus.cloudsim.VmScheduler;
+import org.cloudbus.cloudsim.Pod;
+import org.cloudbus.cloudsim.PodScheduler;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.core.CloudSimTags;
 import org.cloudbus.cloudsim.lists.PeList;
-import org.cloudbus.cloudsim.lists.VmList;
+import org.cloudbus.cloudsim.lists.PodList;
 import org.cloudbus.cloudsim.provisioners.BwProvisioner;
 import org.cloudbus.cloudsim.provisioners.RamProvisioner;
 
@@ -82,8 +82,8 @@ public class NetworkHost extends Host {
 			BwProvisioner bwProvisioner,
 			long storage,
 			List<? extends Pe> peList,
-			VmScheduler vmScheduler) {
-		super(id, ramProvisioner, bwProvisioner, storage, peList, vmScheduler);
+			PodScheduler podScheduler) {
+		super(id, ramProvisioner, bwProvisioner, storage, peList, podScheduler);
 
 		packetrecieved = new ArrayList<NetworkPacket>();
 		packetTosendGlobal = new ArrayList<NetworkPacket>();
@@ -96,9 +96,9 @@ public class NetworkHost extends Host {
 		double smallerTime = Double.MAX_VALUE;
 		// insert in each vm packet recieved
 		recvpackets();
-		for (Vm vm : super.getVmList()) {
-			double time = ((NetworkVm) vm).updateVmProcessing(currentTime, getVmScheduler()
-					.getAllocatedMipsForVm(vm));
+		for (Pod pod : super.getVmList()) {
+			double time = ((NetworkPod) pod).updateVmProcessing(currentTime, getVmScheduler()
+					.getAllocatedMipsForVm(pod));
 			if (time > 0.0 && time < smallerTime) {
 				smallerTime = time;
 			}
@@ -118,13 +118,13 @@ public class NetworkHost extends Host {
 			hs.pkt.recievetime = CloudSim.clock();
 
 			// insert the packet in recievedlist of VM
-			Vm vm = VmList.getById(getVmList(), hs.pkt.reciever);
-			List<HostPacket> pktlist = ((NetworkCloudletSpaceSharedScheduler) vm.getCloudletScheduler()).pktrecv
+			Pod pod = PodList.getById(getVmList(), hs.pkt.reciever);
+			List<HostPacket> pktlist = ((NetworkCloudletSpaceSharedScheduler) pod.getCloudletScheduler()).pktrecv
 					.get(hs.pkt.sender);
 
 			if (pktlist == null) {
 				pktlist = new ArrayList<HostPacket>();
-				((NetworkCloudletSpaceSharedScheduler) vm.getCloudletScheduler()).pktrecv.put(
+				((NetworkCloudletSpaceSharedScheduler) pod.getCloudletScheduler()).pktrecv.put(
 						hs.pkt.sender,
 						pktlist);
 
@@ -140,14 +140,14 @@ public class NetworkHost extends Host {
          * VM hosted on other machine.
 	 */
 	private void sendpackets() {
-		for (Vm vm : super.getVmList()) {
-                    for (Entry<Integer, List<HostPacket>> es : ((NetworkCloudletSpaceSharedScheduler) vm
+		for (Pod pod : super.getVmList()) {
+                    for (Entry<Integer, List<HostPacket>> es : ((NetworkCloudletSpaceSharedScheduler) pod
                                     .getCloudletScheduler()).pkttosend.entrySet()) {
                         List<HostPacket> pktlist = es.getValue();
                         for (HostPacket pkt : pktlist) {
-                                NetworkPacket hpkt = new NetworkPacket(getId(), pkt, vm.getId(), pkt.sender);
-                                Vm vm2 = VmList.getById(this.getVmList(), hpkt.recievervmid);
-                                if (vm2 != null) {
+                                NetworkPacket hpkt = new NetworkPacket(getId(), pkt, pod.getId(), pkt.sender);
+                                Pod pod2 = PodList.getById(this.getVmList(), hpkt.recievervmid);
+                                if (pod2 != null) {
                                         packetTosendLocal.add(hpkt);
                                 } else {
                                         packetTosendGlobal.add(hpkt);
@@ -164,21 +164,21 @@ public class NetworkHost extends Host {
                     hs.stime = hs.rtime;
                     hs.pkt.recievetime = CloudSim.clock();
                     // insertthe packet in recievedlist
-                    Vm vm = VmList.getById(getVmList(), hs.pkt.reciever);
+                    Pod pod = PodList.getById(getVmList(), hs.pkt.reciever);
 
-                    List<HostPacket> pktlist = ((NetworkCloudletSpaceSharedScheduler) vm.getCloudletScheduler()).pktrecv
+                    List<HostPacket> pktlist = ((NetworkCloudletSpaceSharedScheduler) pod.getCloudletScheduler()).pktrecv
                                     .get(hs.pkt.sender);
                     if (pktlist == null) {
                             pktlist = new ArrayList<HostPacket>();
-                            ((NetworkCloudletSpaceSharedScheduler) vm.getCloudletScheduler()).pktrecv.put(
+                            ((NetworkCloudletSpaceSharedScheduler) pod.getCloudletScheduler()).pktrecv.put(
                                             hs.pkt.sender,
                                             pktlist);
                     }
                     pktlist.add(hs.pkt);
 		}
 		if (flag) {
-                    for (Vm vm : super.getVmList()) {
-                        vm.updateVmProcessing(CloudSim.clock(), getVmScheduler().getAllocatedMipsForVm(vm));
+                    for (Pod pod : super.getVmList()) {
+                        pod.updateVmProcessing(CloudSim.clock(), getVmScheduler().getAllocatedMipsForVm(pod));
                     }
 		}
 
@@ -197,11 +197,11 @@ public class NetworkHost extends Host {
 
         /**
          * Gets the maximum utilization among the PEs of a given VM.
-         * @param vm The VM to get its PEs maximum utilization
+         * @param pod The VM to get its PEs maximum utilization
          * @return The maximum utilization among the PEs of the VM.
          */
-	public double getMaxUtilizationAmongVmsPes(Vm vm) {
-		return PeList.getMaxUtilizationAmongVmsPes(getPeList(), vm);
+	public double getMaxUtilizationAmongVmsPes(Pod pod) {
+		return PeList.getMaxUtilizationAmongVmsPes(getPeList(), pod);
 	}
 
 }

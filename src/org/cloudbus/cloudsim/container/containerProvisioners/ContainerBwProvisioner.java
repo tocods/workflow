@@ -28,7 +28,7 @@ public abstract class ContainerBwProvisioner {
     /**
      * Creates the new ContainerBwProvisioner.
      *
-     * @param vmBw the Vm BW
+     * @param vmBw the Pod BW
      * @pre bw >= 0
      * @post $none
      */

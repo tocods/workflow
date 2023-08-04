@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.cloudbus.cloudsim.container.core.Container;
-import org.cloudbus.cloudsim.container.core.ContainerVm;
+import org.cloudbus.cloudsim.container.core.ContainerPod;
 
 /**
  * ContainerAllocationPolicy is an abstract class that represents the provisioning policy of vms to
@@ -26,18 +26,18 @@ import org.cloudbus.cloudsim.container.core.ContainerVm;
 
 public abstract class ContainerAllocationPolicy {
 		/**
-		 * The Vm list.
+		 * The Pod list.
 		 */
-		private List<? extends ContainerVm> containerVmList;
+		private List<? extends ContainerPod> containerVmList;
 
 		/**
-		 * Allocates a new VmAllocationPolicy object.
+		 * Allocates a new PodAllocationPolicy object.
 		 *
 		 * @pre $none
 		 * @post $none
 		 */
 		public ContainerAllocationPolicy() {
-			setContainerVmList(new ArrayList<ContainerVm>());
+			setContainerVmList(new ArrayList<ContainerPod>());
 		}
 
 		/**
@@ -49,7 +49,7 @@ public abstract class ContainerAllocationPolicy {
 		 * @pre $none
 		 * @post $none
 		 */
-		public abstract boolean allocateVmForContainer(Container container,List<ContainerVm> containerVmList);
+		public abstract boolean allocateVmForContainer(Container container,List<ContainerPod> containerPodList);
 
 		/**
 		 * Allocates a specified host for a given VM.
@@ -59,12 +59,12 @@ public abstract class ContainerAllocationPolicy {
 		 * @pre $none
 		 * @post $none
 		 */
-		public abstract boolean allocateVmForContainer(Container container, ContainerVm vm);
+		public abstract boolean allocateVmForContainer(Container container, ContainerPod vm);
 
 		/**
 		 * Optimize allocation of the VMs according to current utilization.
 		 *
-		 //     * @param vmList           the vm list
+		 //     * @param podList           the vm list
 		 //     * @param utilizationBound the utilization bound
 		 //     * @param time             the time
 		 * @return the array list< hash map< string, object>>
@@ -88,7 +88,7 @@ public abstract class ContainerAllocationPolicy {
 		 * @pre $none
 		 * @post $none
 		 */
-		public abstract ContainerVm getContainerVm(Container container);
+		public abstract ContainerPod getContainerVm(Container container);
 
 		/**
 		 * Get the host that is executing the given VM belonging to the given user.
@@ -99,14 +99,14 @@ public abstract class ContainerAllocationPolicy {
 		 * @pre $none
 		 * @post $none
 		 */
-		public abstract ContainerVm getContainerVm(int containerId, int userId);
+		public abstract ContainerPod getContainerVm(int containerId, int userId);
 
 		/**
 		 * Sets the host list.
 		 *
 		 * @param containerVmList the new host list
 		 */
-		protected void setContainerVmList(List<? extends ContainerVm> containerVmList) {
+		protected void setContainerVmList(List<? extends ContainerPod> containerVmList) {
 			this.containerVmList = containerVmList;
 		}
 
@@ -116,7 +116,7 @@ public abstract class ContainerAllocationPolicy {
 		 * @return the host list
 		 */
 		@SuppressWarnings("unchecked")
-		public <T extends ContainerVm> List<T> getContainerVmList() {
+		public <T extends ContainerPod> List<T> getContainerVmList() {
 			return (List<T>) this.containerVmList;
 		}
 

@@ -69,7 +69,7 @@ public class PlanetLabRunner extends RunnerAbstract {
 			int brokerId = broker.getId();
 
 			cloudletList = PlanetLabHelper.createCloudletListPlanetLab(brokerId, inputFolder);
-			vmList = Helper.createVmList(brokerId, cloudletList.size());
+			podList = Helper.createVmList(brokerId, cloudletList.size());
 			hostList = Helper.createHostList(PlanetLabConstants.NUMBER_OF_HOSTS);
 		} catch (Exception e) {
 			e.printStackTrace();

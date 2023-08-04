@@ -17,10 +17,11 @@ package org.workflowsim.scheduling;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.cloudbus.cloudsim.Cloudlet;
+
 import org.cloudbus.cloudsim.Log;
+import org.cloudbus.cloudsim.container.core.Container;
 import org.cloudbus.cloudsim.container.core.ContainerCloudlet;
-import org.cloudbus.cloudsim.container.core.ContainerVm;
+import org.cloudbus.cloudsim.container.core.ContainerPod;
 import org.workflowsim.WorkflowSimTags;
 
 /**
@@ -80,33 +81,38 @@ public class MaxMinSchedulingAlgorithm extends BaseSchedulingAlgorithm {
                 }
             }
             hasChecked.set(maxIndex, true);
-
+            int podId = -1;
             int vmSize = getVmList().size();
-            ContainerVm firstIdleVm = null;//(CondorVM)getVmList().get(0);
+            Container firstIdleContainer = null;//(CondorPod)getVmList().get(0);
             for (int j = 0; j < vmSize; j++) {
-                ContainerVm vm = (ContainerVm) getVmList().get(j);
-                if (vm.getState() == WorkflowSimTags.VM_STATUS_IDLE) {
-                    firstIdleVm = vm;
-                    break;
+                ContainerPod vm = (ContainerPod) getVmList().get(j);
+                for (Container c: vm.getContainerList()) {
+                    if(c.getState() == WorkflowSimTags.VM_STATUS_IDLE) {
+                        firstIdleContainer = c;
+                        podId = vm.getId();
+                        break;
+                    }
                 }
             }
-            if (firstIdleVm == null) {
+            if (firstIdleContainer == null) {
                 break;
             }
             for (int j = 0; j < vmSize; j++) {
-                ContainerVm vm = (ContainerVm) getVmList().get(j);
-                if ((vm.getState() == WorkflowSimTags.VM_STATUS_IDLE)
-                        && vm.getCurrentRequestedTotalMips() > firstIdleVm.getCurrentRequestedTotalMips()) {
-                    firstIdleVm = vm;
-
+                ContainerPod vm = (ContainerPod) getVmList().get(j);
+                for( Container c: vm.getContainerList()) {
+                    if(c.getState() == WorkflowSimTags.VM_STATUS_IDLE
+                        && c.getCurrentRequestedTotalMips() > firstIdleContainer.getCurrentRequestedTotalMips()) {
+                        firstIdleContainer = c;
+                        podId = vm.getId();
+                    }
                 }
             }
-            firstIdleVm.setState(WorkflowSimTags.VM_STATUS_BUSY);
-            maxCloudlet.setVmId(firstIdleVm.getId());
+            firstIdleContainer.setState(WorkflowSimTags.VM_STATUS_BUSY);
+            maxCloudlet.setContainerId(firstIdleContainer.getId());
+            maxCloudlet.setVmId(podId);
             getScheduledList().add(maxCloudlet);
-            Log.printLine("Schedules " + maxCloudlet.getCloudletId() + " with "
-                    + maxCloudlet.getCloudletLength() + " to VM " + firstIdleVm.getId()
-                    + " with " + firstIdleVm.getCurrentRequestedTotalMips());
+            Log.printLine("Schedules " + maxCloudlet.getCloudletId() + " to Pod " + podId
+                    + "'s container" + firstIdleContainer.getId());
 
         }
     }

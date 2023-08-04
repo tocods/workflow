@@ -32,7 +32,7 @@ public class HostSelectionPolicyMinimumCorrelation extends HostSelectionPolicy {
             utilizationHistory = ((PowerContainer) obj).getUtilizationHistoryList();
         } else {
 
-            utilizationHistory = ((PowerContainerVm) obj).getUtilizationHistoryList();
+            utilizationHistory = ((PowerContainerPod) obj).getUtilizationHistoryList();
         }
         Correlation correlation = new Correlation();
         double minCor = Double.MAX_VALUE;

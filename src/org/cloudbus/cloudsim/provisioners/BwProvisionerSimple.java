@@ -11,7 +11,7 @@ package org.cloudbus.cloudsim.provisioners;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.cloudbus.cloudsim.Vm;
+import org.cloudbus.cloudsim.Pod;
 
 /**
  * BwProvisionerSimple is an extension of {@link BwProvisioner} which uses a best-effort policy to
@@ -40,34 +40,34 @@ public class BwProvisionerSimple extends BwProvisioner {
 	}
 
 	@Override
-	public boolean allocateBwForVm(Vm vm, long bw) {
-		deallocateBwForVm(vm);
+	public boolean allocateBwForVm(Pod pod, long bw) {
+		deallocateBwForVm(pod);
 
 		if (getAvailableBw() >= bw) {
 			setAvailableBw(getAvailableBw() - bw);
-			getBwTable().put(vm.getUid(), bw);
-			vm.setCurrentAllocatedBw(getAllocatedBwForVm(vm));
+			getBwTable().put(pod.getUid(), bw);
+			pod.setCurrentAllocatedBw(getAllocatedBwForVm(pod));
 			return true;
 		}
 
-		vm.setCurrentAllocatedBw(getAllocatedBwForVm(vm));
+		pod.setCurrentAllocatedBw(getAllocatedBwForVm(pod));
 		return false;
 	}
 
 	@Override
-	public long getAllocatedBwForVm(Vm vm) {
-		if (getBwTable().containsKey(vm.getUid())) {
-			return getBwTable().get(vm.getUid());
+	public long getAllocatedBwForVm(Pod pod) {
+		if (getBwTable().containsKey(pod.getUid())) {
+			return getBwTable().get(pod.getUid());
 		}
 		return 0;
 	}
 
 	@Override
-	public void deallocateBwForVm(Vm vm) {
-		if (getBwTable().containsKey(vm.getUid())) {
-			long amountFreed = getBwTable().remove(vm.getUid());
+	public void deallocateBwForVm(Pod pod) {
+		if (getBwTable().containsKey(pod.getUid())) {
+			long amountFreed = getBwTable().remove(pod.getUid());
 			setAvailableBw(getAvailableBw() + amountFreed);
-			vm.setCurrentAllocatedBw(0);
+			pod.setCurrentAllocatedBw(0);
 		}
 	}
 
@@ -78,12 +78,12 @@ public class BwProvisionerSimple extends BwProvisioner {
 	}
 
 	@Override
-	public boolean isSuitableForVm(Vm vm, long bw) {
-		long allocatedBw = getAllocatedBwForVm(vm);
-		boolean result = allocateBwForVm(vm, bw);
-		deallocateBwForVm(vm);
+	public boolean isSuitableForVm(Pod pod, long bw) {
+		long allocatedBw = getAllocatedBwForVm(pod);
+		boolean result = allocateBwForVm(pod, bw);
+		deallocateBwForVm(pod);
 		if (allocatedBw > 0) {
-			allocateBwForVm(vm, allocatedBw);
+			allocateBwForVm(pod, allocatedBw);
 		}
 		return result;
 	}

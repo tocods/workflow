@@ -17,7 +17,7 @@ package org.workflowsim.scheduling;
 
 import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.Log;
-import org.cloudbus.cloudsim.container.core.ContainerVm;
+import org.cloudbus.cloudsim.container.core.ContainerPod;
 import org.workflowsim.WorkflowSimTags;
 
 /**
@@ -42,10 +42,10 @@ public class MCTSchedulingAlgorithm extends BaseSchedulingAlgorithm {
         for (int i = 0; i < size; i++) {
             Cloudlet cloudlet = (Cloudlet) getCloudletList().get(i);
             int vmSize = getVmList().size();
-            ContainerVm firstIdleVm = null;
+            ContainerPod firstIdleVm = null;
 
             for (int j = 0; j < vmSize; j++) {
-                ContainerVm vm = (ContainerVm) getVmList().get(j);
+                ContainerPod vm = (ContainerPod) getVmList().get(j);
                 if (vm.getState() == WorkflowSimTags.VM_STATUS_IDLE) {
                     firstIdleVm = vm;
                     break;
@@ -56,7 +56,7 @@ public class MCTSchedulingAlgorithm extends BaseSchedulingAlgorithm {
             }
 
             for (int j = 0; j < vmSize; j++) {
-                ContainerVm vm = (ContainerVm) getVmList().get(j);
+                ContainerPod vm = (ContainerPod) getVmList().get(j);
                 if ((vm.getState() == WorkflowSimTags.VM_STATUS_IDLE)
                         && (vm.getCurrentRequestedTotalMips() > firstIdleVm.getCurrentRequestedTotalMips())) {
                     firstIdleVm = vm;

@@ -11,7 +11,7 @@ package org.cloudbus.cloudsim.power;
 import java.util.List;
 
 import org.cloudbus.cloudsim.Pe;
-import org.cloudbus.cloudsim.VmScheduler;
+import org.cloudbus.cloudsim.PodScheduler;
 import org.cloudbus.cloudsim.power.models.PowerModel;
 import org.cloudbus.cloudsim.provisioners.BwProvisioner;
 import org.cloudbus.cloudsim.provisioners.RamProvisioner;
@@ -44,7 +44,7 @@ public class PowerHostUtilizationHistory extends PowerHost {
 	 * @param bwProvisioner the bw provisioner
 	 * @param storage the storage capacity
 	 * @param peList the host's PEs list
-	 * @param vmScheduler the vm scheduler
+	 * @param podScheduler the vm scheduler
 	 * @param powerModel the power consumption model
 	 */
 	public PowerHostUtilizationHistory(
@@ -53,9 +53,9 @@ public class PowerHostUtilizationHistory extends PowerHost {
 			BwProvisioner bwProvisioner,
 			long storage,
 			List<? extends Pe> peList,
-			VmScheduler vmScheduler,
+			PodScheduler podScheduler,
 			PowerModel powerModel) {
-		super(id, ramProvisioner, bwProvisioner, storage, peList, vmScheduler, powerModel);
+		super(id, ramProvisioner, bwProvisioner, storage, peList, podScheduler, powerModel);
 	}
 
 	/**
@@ -64,9 +64,9 @@ public class PowerHostUtilizationHistory extends PowerHost {
 	 * @return the host CPU utilization percentage history
 	 */
 	protected double[] getUtilizationHistory() {
-		double[] utilizationHistory = new double[PowerVm.HISTORY_LENGTH];
+		double[] utilizationHistory = new double[PowerPod.HISTORY_LENGTH];
 		double hostMips = getTotalMips();
-		for (PowerVm vm : this.<PowerVm> getVmList()) {
+		for (PowerPod vm : this.<PowerPod> getVmList()) {
 			for (int i = 0; i < vm.getUtilizationHistory().size(); i++) {
 				utilizationHistory[i] += vm.getUtilizationHistory().get(i) * vm.getMips() / hostMips;
 			}

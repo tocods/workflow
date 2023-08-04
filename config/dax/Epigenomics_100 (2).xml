@@ -490,7 +490,7 @@
     <uses file="chr21.0.23.nocontam.map" link="input" register="true" transfer="true" optional="false" type="data" size="593278"/>
     <uses file="chr21.nocontam.map" link="output" register="true" transfer="true" optional="false" type="data" size="23854933"/>
     <uses file="chr21.nocontam.map.zr" link="output" register="true" transfer="true" optional="false" type="data" size="621933"/>
-    <uses file="chr21.nocontam.map.vm" link="output" register="true" transfer="true" optional="false" type="data" size="113723"/>
+    <uses file="chr21.nocontam.map.pod" link="output" register="true" transfer="true" optional="false" type="data" size="113723"/>
   </job>
   <job id="ID00098" namespace="Genome" name="maqindex_chr21" version="1.0" runtime="0.02">
     <uses file="chr21.nocontam.map" link="input" register="true" transfer="true" optional="false" type="data" size="23854933"/>

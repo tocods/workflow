@@ -19,7 +19,7 @@ import org.cloudbus.cloudsim.core.CloudSimTags;
 import org.cloudbus.cloudsim.core.SimEntity;
 import org.cloudbus.cloudsim.core.SimEvent;
 import org.cloudbus.cloudsim.lists.CloudletList;
-import org.cloudbus.cloudsim.lists.VmList;
+import org.cloudbus.cloudsim.lists.PodList;
 
 /**
  * DatacentreBroker represents a broker acting on behalf of a user. It hides VM management, as vm
@@ -32,10 +32,10 @@ import org.cloudbus.cloudsim.lists.VmList;
 public class DatacenterBroker extends SimEntity {
 
 	/** The list of VMs submitted to be managed by the broker. */
-	protected List<? extends Vm> vmList;
+	protected List<? extends Pod> vmList;
 
 	/** The list of VMs created by the broker. */
-	protected List<? extends Vm> vmsCreatedList;
+	protected List<? extends Pod> vmsCreatedList;
 
 	/** The list of cloudlet submitted to the broker. 
          * @see #submitCloudletList(java.util.List) 
@@ -86,8 +86,8 @@ public class DatacenterBroker extends SimEntity {
 	public DatacenterBroker(String name) throws Exception {
 		super(name);
 
-		setVmList(new ArrayList<Vm>());
-		setVmsCreatedList(new ArrayList<Vm>());
+		setVmList(new ArrayList<Pod>());
+		setVmsCreatedList(new ArrayList<Pod>());
 		setCloudletList(new ArrayList<Cloudlet>());
 		setCloudletSubmittedList(new ArrayList<Cloudlet>());
 		setCloudletReceivedList(new ArrayList<Cloudlet>());
@@ -111,7 +111,7 @@ public class DatacenterBroker extends SimEntity {
 	 * @pre list !=null
 	 * @post $none
 	 */
-	public void submitVmList(List<? extends Vm> list) {
+	public void submitVmList(List<? extends Pod> list) {
 		getVmList().addAll(list);
 	}
 
@@ -228,10 +228,10 @@ public class DatacenterBroker extends SimEntity {
 
 		if (result == CloudSimTags.TRUE) {
 			getVmsToDatacentersMap().put(vmId, datacenterId);
-			getVmsCreatedList().add(VmList.getById(getVmList(), vmId));
+			getVmsCreatedList().add(PodList.getById(getVmList(), vmId));
 			Log.printConcatLine(CloudSim.clock(), ": ", getName(), ": VM #", vmId,
 					" has been created in Datacenter #", datacenterId, ", Host #",
-					VmList.getById(getVmsCreatedList(), vmId).getHost().getId());
+					PodList.getById(getVmsCreatedList(), vmId).getHost().getId());
 		} else {
 			Log.printConcatLine(CloudSim.clock(), ": ", getName(), ": Creation of VM #", vmId,
 					" failed in Datacenter #", datacenterId);
@@ -326,11 +326,11 @@ public class DatacenterBroker extends SimEntity {
 		// send as much vms as possible for this datacenter before trying the next one
 		int requestedVms = 0;
 		String datacenterName = CloudSim.getEntityName(datacenterId);
-		for (Vm vm : getVmList()) {
-			if (!getVmsToDatacentersMap().containsKey(vm.getId())) {
-				Log.printLine(CloudSim.clock() + ": " + getName() + ": Trying to Create VM #" + vm.getId()
+		for (Pod pod : getVmList()) {
+			if (!getVmsToDatacentersMap().containsKey(pod.getId())) {
+				Log.printLine(CloudSim.clock() + ": " + getName() + ": Trying to Create VM #" + pod.getId()
 						+ " in " + datacenterName);
-				sendNow(datacenterId, CloudSimTags.VM_CREATE_ACK, vm);
+				sendNow(datacenterId, CloudSimTags.VM_CREATE_ACK, pod);
 				requestedVms++;
 			}
 		}
@@ -352,13 +352,13 @@ public class DatacenterBroker extends SimEntity {
 		int vmIndex = 0;
 		List<Cloudlet> successfullySubmitted = new ArrayList<Cloudlet>();
 		for (Cloudlet cloudlet : getCloudletList()) {
-			Vm vm;
+			Pod pod;
 			// if user didn't bind this cloudlet and it has not been executed yet
 			if (cloudlet.getVmId() == -1) {
-				vm = getVmsCreatedList().get(vmIndex);
-			} else { // submit to the specific vm
-				vm = VmList.getById(getVmsCreatedList(), cloudlet.getVmId());
-				if (vm == null) { // vm was not created
+				pod = getVmsCreatedList().get(vmIndex);
+			} else { // submit to the specific pod
+				pod = PodList.getById(getVmsCreatedList(), cloudlet.getVmId());
+				if (pod == null) { // pod was not created
 					if(!Log.isDisabled()) {				    
 					    Log.printConcatLine(CloudSim.clock(), ": ", getName(), ": Postponing execution of cloudlet ",
 							cloudlet.getCloudletId(), ": bount VM not available");
@@ -369,11 +369,11 @@ public class DatacenterBroker extends SimEntity {
 
 			if (!Log.isDisabled()) {
 			    Log.printConcatLine(CloudSim.clock(), ": ", getName(), ": Sending cloudlet ",
-					cloudlet.getCloudletId(), " to VM #", vm.getId());
+					cloudlet.getCloudletId(), " to VM #", pod.getId());
 			}
 			
-			cloudlet.setVmId(vm.getId());
-			sendNow(getVmsToDatacentersMap().get(vm.getId()), CloudSimTags.CLOUDLET_SUBMIT, cloudlet);
+			cloudlet.setVmId(pod.getId());
+			sendNow(getVmsToDatacentersMap().get(pod.getId()), CloudSimTags.CLOUDLET_SUBMIT, cloudlet);
 			cloudletsSubmitted++;
 			vmIndex = (vmIndex + 1) % getVmsCreatedList().size();
 			getCloudletSubmittedList().add(cloudlet);
@@ -391,9 +391,9 @@ public class DatacenterBroker extends SimEntity {
 	 * @post $none
 	 */
 	protected void clearDatacenters() {
-		for (Vm vm : getVmsCreatedList()) {
-			Log.printConcatLine(CloudSim.clock(), ": " + getName(), ": Destroying VM #", vm.getId());
-			sendNow(getVmsToDatacentersMap().get(vm.getId()), CloudSimTags.VM_DESTROY, vm);
+		for (Pod pod : getVmsCreatedList()) {
+			Log.printConcatLine(CloudSim.clock(), ": " + getName(), ": Destroying VM #", pod.getId());
+			sendNow(getVmsToDatacentersMap().get(pod.getId()), CloudSimTags.VM_DESTROY, pod);
 		}
 
 		getVmsCreatedList().clear();
@@ -427,7 +427,7 @@ public class DatacenterBroker extends SimEntity {
 	 * @return the vm list
 	 */
 	@SuppressWarnings("unchecked")
-	public <T extends Vm> List<T> getVmList() {
+	public <T extends Pod> List<T> getVmList() {
 		return (List<T>) vmList;
 	}
 
@@ -437,7 +437,7 @@ public class DatacenterBroker extends SimEntity {
 	 * @param <T> the generic type
 	 * @param vmList the new vm list
 	 */
-	protected <T extends Vm> void setVmList(List<T> vmList) {
+	protected <T extends Pod> void setVmList(List<T> vmList) {
 		this.vmList = vmList;
 	}
 
@@ -511,7 +511,7 @@ public class DatacenterBroker extends SimEntity {
 	 * @return the vm list
 	 */
 	@SuppressWarnings("unchecked")
-	public <T extends Vm> List<T> getVmsCreatedList() {
+	public <T extends Pod> List<T> getVmsCreatedList() {
 		return (List<T>) vmsCreatedList;
 	}
 
@@ -521,7 +521,7 @@ public class DatacenterBroker extends SimEntity {
 	 * @param <T> the generic type
 	 * @param vmsCreatedList the vms created list
 	 */
-	protected <T extends Vm> void setVmsCreatedList(List<T> vmsCreatedList) {
+	protected <T extends Pod> void setVmsCreatedList(List<T> vmsCreatedList) {
 		this.vmsCreatedList = vmsCreatedList;
 	}
 

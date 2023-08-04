@@ -1,9 +1,9 @@
 package org.cloudbus.cloudsim.container.core;
 
-import org.cloudbus.cloudsim.container.schedulers.ContainerVmScheduler;
-import org.cloudbus.cloudsim.container.containerVmProvisioners.ContainerVmBwProvisioner;
-import org.cloudbus.cloudsim.container.containerVmProvisioners.ContainerVmPe;
-import org.cloudbus.cloudsim.container.containerVmProvisioners.ContainerVmRamProvisioner;
+import org.cloudbus.cloudsim.container.containerPodProvisioners.ContainerPodBwProvisioner;
+import org.cloudbus.cloudsim.container.containerPodProvisioners.ContainerPodRamProvisioner;
+import org.cloudbus.cloudsim.container.schedulers.ContainerPodScheduler;
+import org.cloudbus.cloudsim.container.containerPodProvisioners.ContainerPodPe;
 import org.cloudbus.cloudsim.power.models.PowerModel;
 
 import java.util.List;
@@ -30,11 +30,11 @@ public class PowerContainerHost extends ContainerHostDynamicWorkload {
      */
     public PowerContainerHost(
             int id,
-            ContainerVmRamProvisioner ramProvisioner,
-            ContainerVmBwProvisioner bwProvisioner,
+            ContainerPodRamProvisioner ramProvisioner,
+            ContainerPodBwProvisioner bwProvisioner,
             long storage,
-            List<? extends ContainerVmPe> peList,
-            ContainerVmScheduler vmScheduler,
+            List<? extends ContainerPodPe> peList,
+            ContainerPodScheduler vmScheduler,
             PowerModel powerModel) {
         super(id, ramProvisioner, bwProvisioner, storage, peList, vmScheduler);
         setPowerModel(powerModel);

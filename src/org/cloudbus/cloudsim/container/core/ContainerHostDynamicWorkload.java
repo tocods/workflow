@@ -1,13 +1,13 @@
 package org.cloudbus.cloudsim.container.core;
 
-import org.cloudbus.cloudsim.container.containerVmProvisioners.ContainerVmBwProvisioner;
-import org.cloudbus.cloudsim.container.containerVmProvisioners.ContainerVmPe;
-import org.cloudbus.cloudsim.container.lists.ContainerVmPeList;
-import org.cloudbus.cloudsim.container.containerVmProvisioners.ContainerVmRamProvisioner;
-import org.cloudbus.cloudsim.container.schedulers.ContainerVmScheduler;
+import org.cloudbus.cloudsim.container.containerPodProvisioners.ContainerPodBwProvisioner;
+import org.cloudbus.cloudsim.container.containerPodProvisioners.ContainerPodPe;
+import org.cloudbus.cloudsim.container.containerPodProvisioners.ContainerPodRamProvisioner;
+import org.cloudbus.cloudsim.container.lists.ContainerPodPeList;
+import org.cloudbus.cloudsim.container.schedulers.ContainerPodScheduler;
 import org.cloudbus.cloudsim.HostStateHistoryEntry;
 import org.cloudbus.cloudsim.Log;
-import org.cloudbus.cloudsim.core.CloudSim;
+
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -39,11 +39,11 @@ public class ContainerHostDynamicWorkload extends ContainerHost{
          */
         public ContainerHostDynamicWorkload(
                 int id,
-                ContainerVmRamProvisioner ramProvisioner,
-                ContainerVmBwProvisioner bwProvisioner,
+                ContainerPodRamProvisioner ramProvisioner,
+                ContainerPodBwProvisioner bwProvisioner,
                 long storage,
-                List<? extends ContainerVmPe> peList,
-                ContainerVmScheduler vmScheduler) {
+                List<? extends ContainerPodPe> peList,
+                ContainerPodScheduler vmScheduler) {
             super(id, ramProvisioner, bwProvisioner, storage, peList, vmScheduler);
             setUtilizationMips(0);
             setPreviousUtilizationMips(0);
@@ -60,63 +60,63 @@ public class ContainerHostDynamicWorkload extends ContainerHost{
             setUtilizationMips(0);
             double hostTotalRequestedMips = 0;
 
-            for (ContainerVm containerVm : getVmList()) {
-                getContainerVmScheduler().deallocatePesForVm(containerVm);
+            for (ContainerPod containerPod : getVmList()) {
+                getContainerVmScheduler().deallocatePesForVm(containerPod);
             }
 
-            for (ContainerVm  containerVm : getVmList()) {
-                getContainerVmScheduler().allocatePesForVm(containerVm, containerVm.getCurrentRequestedMips());
+            for (ContainerPod containerPod : getVmList()) {
+                getContainerVmScheduler().allocatePesForVm(containerPod, containerPod.getCurrentRequestedMips());
             }
 
-            for (ContainerVm  containerVm : getVmList()) {
-                double totalRequestedMips = containerVm.getCurrentRequestedTotalMips();
-                double totalAllocatedMips = getContainerVmScheduler().getTotalAllocatedMipsForContainerVm(containerVm);
+            for (ContainerPod containerPod : getVmList()) {
+                double totalRequestedMips = containerPod.getCurrentRequestedTotalMips();
+                double totalAllocatedMips = getContainerVmScheduler().getTotalAllocatedMipsForContainerVm(containerPod);
 
                 if (!Log.isDisabled()) {
                 /*by arman I commented log  Log.formatLine(
-                            "%.2f: [Host #" + getId() + "] Total allocated MIPS for VM #" + containerVm.getId()
-                                    + " (Host #" + containerVm.getHost().getId()
+                            "%.2f: [Host #" + getId() + "] Total allocated MIPS for VM #" + containerPod.getId()
+                                    + " (Host #" + containerPod.getHost().getId()
                                     + ") is %.2f, was requested %.2f out of total %.2f (%.2f%%)",
                             CloudSim.clock(),
                             totalAllocatedMips,
                             totalRequestedMips,
-                            containerVm.getMips(),
-                            totalRequestedMips / containerVm.getMips() * 100);
+                            containerPod.getMips(),
+                            totalRequestedMips / containerPod.getMips() * 100);
                         */
-                    List<ContainerVmPe> pes = getContainerVmScheduler().getPesAllocatedForContainerVM(containerVm);
+                    List<ContainerPodPe> pes = getContainerVmScheduler().getPesAllocatedForContainerVM(containerPod);
                     StringBuilder pesString = new StringBuilder();
-                    for (ContainerVmPe pe : pes) {
+                    for (ContainerPodPe pe : pes) {
                         pesString.append(String.format(" PE #" + pe.getId() + ": %.2f.", pe.getContainerVmPeProvisioner()
-                                .getTotalAllocatedMipsForContainerVm(containerVm)));
+                                .getTotalAllocatedMipsForContainerVm(containerPod)));
                     }
                     /*by arman I commented logLog.formatLine(
-                            "%.2f: [Host #" + getId() + "] MIPS for VM #" + containerVm.getId() + " by PEs ("
+                            "%.2f: [Host #" + getId() + "] MIPS for VM #" + containerPod.getId() + " by PEs ("
                                     + getNumberOfPes() + " * " + getContainerVmScheduler().getPeCapacity() + ")."
                                     + pesString,
                             CloudSim.clock());
                     */
                 }
 
-                if (getVmsMigratingIn().contains(containerVm)) {
-                 /*by arman I commented log   Log.formatLine("%.2f: [Host #" + getId() + "] VM #" + containerVm.getId()
+                if (getVmsMigratingIn().contains(containerPod)) {
+                 /*by arman I commented log   Log.formatLine("%.2f: [Host #" + getId() + "] VM #" + containerPod.getId()
                             + " is being migrated to Host #" + getId(), CloudSim.clock());
                     */
                 } else {
                     if (totalAllocatedMips + 0.1 < totalRequestedMips) {
-                        /*by arman I commented logLog.formatLine("%.2f: [Host #" + getId() + "] Under allocated MIPS for VM #" + containerVm.getId()
+                        /*by arman I commented logLog.formatLine("%.2f: [Host #" + getId() + "] Under allocated MIPS for VM #" + containerPod.getId()
                                 + ": %.2f", CloudSim.clock(), totalRequestedMips - totalAllocatedMips);
                         */
                     }
 
-                    containerVm.addStateHistoryEntry(
+                    containerPod.addStateHistoryEntry(
                             currentTime,
                             totalAllocatedMips,
                             totalRequestedMips,
-                            (containerVm.isInMigration() && !getVmsMigratingIn().contains(containerVm)));
+                            (containerPod.isInMigration() && !getVmsMigratingIn().contains(containerPod)));
 
-                    if (containerVm.isInMigration()) {
+                    if (containerPod.isInMigration()) {
                        /*by arman I commented log Log.formatLine(
-                                "%.2f: [Host #" + getId() + "] VM #" + containerVm.getId() + " is in migration",
+                                "%.2f: [Host #" + getId() + "] VM #" + containerPod.getId() + " is in migration",
                                 CloudSim.clock());
                         */
                         totalAllocatedMips /= 0.9; // performance degradation due to migration - 10%
@@ -141,21 +141,21 @@ public class ContainerHostDynamicWorkload extends ContainerHost{
          *
          * @return the completed vms
          */
-        public List<ContainerVm> getCompletedVms() {
-            List<ContainerVm> vmsToRemove = new ArrayList<>();
-            for (ContainerVm containerVm : getVmList()) {
-                if (containerVm.isInMigration()) {
+        public List<ContainerPod> getCompletedVms() {
+            List<ContainerPod> vmsToRemove = new ArrayList<>();
+            for (ContainerPod containerPod : getVmList()) {
+                if (containerPod.isInMigration()) {
                     continue;
                 }
 //                if the  vm is in waiting state then dont kill it just waite !!!!!!!!!
-                 if(containerVm.isInWaiting()){
+                 if(containerPod.isInWaiting()){
                      continue;
                  }
-//              if (containerVm.getCurrentRequestedTotalMips() == 0) {
-//                    vmsToRemove.add(containerVm);
+//              if (containerPod.getCurrentRequestedTotalMips() == 0) {
+//                    vmsToRemove.add(containerPod);
 //                }
-                if(containerVm.getNumberOfContainers()==0 ){
-                    vmsToRemove.add(containerVm);
+                if(containerPod.getNumberOfContainers()==0 ){
+                    vmsToRemove.add(containerPod);
                 }
             }
             return vmsToRemove;
@@ -170,9 +170,9 @@ public class ContainerHostDynamicWorkload extends ContainerHost{
      */
     public int getNumberofContainers() {
         int numberofContainers = 0;
-        for (ContainerVm containerVm : getVmList()) {
-            numberofContainers += containerVm.getNumberOfContainers();
-            Log.print("The number of containers in VM# " + containerVm.getId()+"is: "+ containerVm.getNumberOfContainers());
+        for (ContainerPod containerPod : getVmList()) {
+            numberofContainers += containerPod.getNumberOfContainers();
+            Log.print("The number of containers in VM# " + containerPod.getId()+"is: "+ containerPod.getNumberOfContainers());
             Log.printLine();
         }
         return numberofContainers;
@@ -187,7 +187,7 @@ public class ContainerHostDynamicWorkload extends ContainerHost{
          * @return the utilization
          */
         public double getMaxUtilization() {
-            return ContainerVmPeList.getMaxUtilization(getPeList());
+            return ContainerPodPeList.getMaxUtilization(getPeList());
         }
 
         /**
@@ -196,8 +196,8 @@ public class ContainerHostDynamicWorkload extends ContainerHost{
          * @param vm the vm
          * @return the utilization
          */
-        public double getMaxUtilizationAmongVmsPes(ContainerVm vm) {
-            return ContainerVmPeList.getMaxUtilizationAmongVmsPes(getPeList(), vm);
+        public double getMaxUtilizationAmongVmsPes(ContainerPod vm) {
+            return ContainerPodPeList.getMaxUtilizationAmongVmsPes(getPeList(), vm);
         }
 
         /**
