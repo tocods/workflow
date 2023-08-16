@@ -16,6 +16,7 @@
 package org.wfc.examples;
 
 import java.io.File;
+import java.io.PrintStream;
 import java.lang.management.*;
 import java.text.DecimalFormat;
 import java.util.*;
@@ -87,7 +88,8 @@ public class WFCExample {
     private static List<ContainerHost> hostList;    
     public static List<? extends ContainerPod> vmList;
     public static List<String> ids;
-    
+
+
     public static void main(String[] args) {
         try {                                                
                         
@@ -104,7 +106,7 @@ public class WFCExample {
              
             Log.printLine("Starting " + experimentName + " ... ");
                         
-            String daxPath = "./config/dax/Montage_" + (WFCConstants.WFC_NUMBER_CLOUDLETS - 1) + ".xml";
+            String daxPath = "./config/dax/Montage_" + (/*WFCConstants.WFC_NUMBER_CLOUDLETS - 1*/3) + ".xml";
 
             File daxFile = new File(daxPath);
             if (!daxFile.exists()) {
@@ -176,7 +178,7 @@ public class WFCExample {
 
             PowerContainerAllocationPolicy containerAllocationPolicy = new PodContainerAllocationPolicy();
             PowerContainerPodSelectionPolicy podSelectionPolicy = new PowerContainerPodSelectionPolicyMaximumUsage();
-            HostSelectionPolicy hostSelectionPolicy = new HostSelectionPolicyFirstFit();
+            HostSelectionPolicy hostSelectionPolicy = new HostSelectionPolicyK8s();
 
             String logAddress = "D:/asResults";
                        
@@ -471,15 +473,15 @@ public class WFCExample {
                 //datacenter.getContainerAllocationPolicy().getContainerVm(job.getContainerId(), job.getUserId()).getHost().getId()
                 Log.printLine(indent + indent +indent + job.getResourceId() 
                         //+ indent + indent  + indent + indent + datacenter.getVmAllocationPolicy().getHost(job.getVmId(), job.getUserId()).getId()
-                        + indent + indent + indent + job.getVmId()
-                        + indent + indent + indent + "C" + job.getContainerId() + "C"
-                        + indent + indent + indent + dft.format(job.getActualCPUTime())
-                        + indent + indent + indent + dft.format(job.getExecStartTime()) + indent + indent + indent
-                        + dft.format(job.getFinishTime()) + indent + indent + indent + job.getDepth()
+                        + indent + indent + indent + /*job.getVmId()
+                        + */indent + indent + indent + "C" + job.getContainerId() + "C"
+                        + indent + indent + indent + /*dft.format(job.getActualCPUTime())
+                        +*/ indent + indent + indent + dft.format(job.getExecStartTime()) + indent + indent + indent
+                        + dft.format(job.getFinishTime()) /*+ indent + indent + indent + job.getDepth()
                         + indent + indent + indent 
-                        + dft.format(job.getProcessingCost()                       
+                        + dft.format(job.getProcessingCost()
                        
-                        ));
+                        )*/);
                   //Log.printLine();                              
                   /*
                    Log.printLine(datacenter.getContainerAllocationPolicy().getContainerVm(job.getContainerId(), job.getUserId()).getAllocatedMipsForContainer(datacenter.getContainerList().get(job.getContainerId()-1)));

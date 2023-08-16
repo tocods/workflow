@@ -33,6 +33,8 @@ public class Host {
 	/** The storage capacity. */
 	private long storage;
 
+	private long total_storage;
+
 	/** The ram provisioner. */
 	private RamProvisioner ramProvisioner;
 
@@ -75,6 +77,7 @@ public class Host {
 			long storage,
 			List<? extends Pe> peList,
 			PodScheduler podScheduler) {
+		this.total_storage = storage;
 		setId(id);
 		setRamProvisioner(ramProvisioner);
 		setBwProvisioner(bwProvisioner);
@@ -83,6 +86,10 @@ public class Host {
 
 		setPeList(peList);
 		setFailed(false);
+	}
+
+	public long getTotal_storage() {
+		return total_storage;
 	}
 
 	/**

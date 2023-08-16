@@ -20,8 +20,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.cloudbus.cloudsim.Consts;
-import org.cloudbus.cloudsim.Log;
+
+import org.cloudbus.cloudsim.*;
+import org.cloudbus.cloudsim.container.core.Container;
 import org.cloudbus.cloudsim.container.core.ContainerPod;
 import org.workflowsim.FileItem;
 import org.workflowsim.Task;
@@ -36,9 +37,11 @@ import org.workflowsim.utils.Parameters;
 public class HEFTPlanningAlgorithm extends BasePlanningAlgorithm {
 
     private Map<Task, Map<ContainerPod, Double>> computationCosts;
+    private Map<Task, Map<Container, Double>> computationCostsInContainer;
     private Map<Task, Map<Task, Double>> transferCosts;
     private Map<Task, Double> rank;
     private Map<ContainerPod, List<Event>> schedules;
+    private Map<Container, List<Event>> schedulersInContainer;
     private Map<Task, Double> earliestFinishTimes;
     private double averageBandwidth;
 
@@ -71,6 +74,7 @@ public class HEFTPlanningAlgorithm extends BasePlanningAlgorithm {
 
     public HEFTPlanningAlgorithm() {
         computationCosts = new HashMap<>();
+        computationCostsInContainer = new HashMap<>();
         transferCosts = new HashMap<>();
         rank = new HashMap<>();
         earliestFinishTimes = new HashMap<>();
@@ -115,6 +119,20 @@ public class HEFTPlanningAlgorithm extends BasePlanningAlgorithm {
         return avg / getVmList().size();
     }
 
+    private double calculateAverageBandwidthOfHosts() {
+        double avg = 0.0;
+        Integer length = 0;
+        for (Object datacenter: getDatacenterList()) {
+            Datacenter datacenter1 = (Datacenter) datacenter;
+            for(Object host: datacenter1.getHostList()) {
+                Host host1 = (Host) host;
+                avg += host1.getBw();
+                length ++;
+            }
+        }
+        return avg / length;
+    }
+
     /**
      * Populates the computationCosts field with the time in seconds to compute
      * a task in a vm.
@@ -132,6 +150,25 @@ public class HEFTPlanningAlgorithm extends BasePlanningAlgorithm {
                 }
             }
             computationCosts.put(task, costsVm);
+        }
+    }
+
+    private void calculateComputationCostsInContainer() {
+        for (Task task: getTaskList()) {
+            Map<Container, Double> costsContainer = new HashMap<>();
+            for (Object podObject: getVmList()) {
+                ContainerPod pod = (ContainerPod) podObject;
+                for(Object containerObject: pod.getContainerList()) {
+                    Container container = (Container) containerObject;
+                    if(container.getNumberOfPes() < task.getNumberOfPes()) {
+                        costsContainer.put(container, Double.MAX_VALUE);
+                    } else {
+                        costsContainer.put(container,
+                                task.getCloudletTotalLength() / container.getMips());
+                    }
+                }
+            }
+            computationCostsInContainer.put(task, costsContainer);
         }
     }
 

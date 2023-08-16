@@ -232,7 +232,8 @@ public class Helper {
 			String experimentName,
 			boolean outputInCsv,
 			String outputFolder) {
-		Log.enable();
+		//Log.enable();
+		Log.disable();
 		List<Host> hosts = datacenter.getHostList();
 
 		int numberOfHosts = hosts.size();

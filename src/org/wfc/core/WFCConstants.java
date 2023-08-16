@@ -63,8 +63,8 @@ public  class WFCConstants {
 //-----------------------Number
     
     public static   int WFC_NUMBER_SCHEDULER = 1;
-    public static   int WFC_NUMBER_HOSTS = 1;
-    public static   int WFC_NUMBER_VMS =1+2;
+    public static   int WFC_NUMBER_HOSTS = 10;
+    public static   int WFC_NUMBER_VMS = 20;
     public static   int WFC_NUMBER_USERS = 1;
     public static   int WFC_NUMBER_CONTAINER= 101;
     public static   int WFC_NUMBER_CLOUDLETS = 101;

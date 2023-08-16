@@ -27,6 +27,8 @@ public class ContainerHost {
      */
     private long storage;
 
+    private long total_storage;
+
     /**
      * The ram provisioner.
      */
@@ -87,6 +89,7 @@ public class ContainerHost {
             long storage,
             List<? extends ContainerPodPe> peList,
             ContainerPodScheduler containerPodScheduler) {
+        this.total_storage = storage;
         setId(id);
         setContainerVmRamProvisioner(containerPodRamProvisioner);
         setContainerVmBwProvisioner(containerPodBwProvisioner);
@@ -95,6 +98,10 @@ public class ContainerHost {
         setPeList(peList);
         setFailed(false);
 
+    }
+
+    public long getTotal_storage() {
+        return this.total_storage;
     }
 
     /**

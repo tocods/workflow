@@ -8,6 +8,10 @@ import org.cloudbus.cloudsim.core.CloudSimTags;
 import org.cloudbus.cloudsim.core.SimEntity;
 import org.cloudbus.cloudsim.core.SimEvent;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -83,6 +87,8 @@ public class WFCDatacenter extends SimEntity {
      */
     private String logAddress;
 
+    Writer out;
+
 
     /**
      * Allocates a new PowerDatacenter object.
@@ -115,7 +121,10 @@ public class WFCDatacenter extends SimEntity {
         setSchedulingInterval(schedulingInterval);
         setExperimentName(experimentName);
         setLogAddress(logAddress);
-        
+        java.io.File file = new java.io.File("D:/test_container.txt");
+
+        out = new FileWriter(file);
+        out.write("asasa");
         for (ContainerHost host : getCharacteristics().getHostList()) {
             host.setDatacenter(this);
         }
@@ -896,6 +905,7 @@ public class WFCDatacenter extends SimEntity {
             double fileTransferTime = 0.0;
             if (cl.getClassType() == ClassType.COMPUTE.value) {
                 fileTransferTime = processDataStageInForComputeJob(cl.getFileList(), cl);
+                Log.printLine("task " + cl.getCloudletId() + " 's data transfer time is: " + fileTransferTime);
             }
              //double fileTransferTime = predictFileTransferTime(cl.getRequiredFiles());
    
@@ -903,6 +913,7 @@ public class WFCDatacenter extends SimEntity {
                         
             ContainerCloudletScheduler schedulerContainer=container.getContainerCloudletScheduler();
             double estimatedFinishTime = schedulerContainer.cloudletSubmit(cl, fileTransferTime);
+            Log.printLine("task " + cl.getCloudletId() + " 's finishTime: " + estimatedFinishTime);
             updateTaskExecTime(cl, vm);
             
             // if this cloudlet is in the exec queue
@@ -1409,9 +1420,12 @@ public class WFCDatacenter extends SimEntity {
      */
     private void updateTaskExecTime(Job job, ContainerPod vm) {
         double start_time = job.getExecStartTime();
+        Log.printLine("job's length: " + job.getTaskList().size());
         for (Task task : job.getTaskList()) {
             task.setExecStartTime(start_time);
+
             double task_runtime = task.getCloudletLength() / vm.getMips();
+            Log.printLine("task id: " + task.getCloudletId() + " start time is: " + start_time + " run time is: " + task_runtime);
             start_time += task_runtime;
             //Because CloudSim would not let us update end time here
             task.setTaskFinishTime(start_time);
@@ -1517,7 +1531,9 @@ public class WFCDatacenter extends SimEntity {
                         for (Iterator it = siteList.iterator(); it.hasNext();) {
                             //site is where one replica of this data is located at
                             String site = (String) it.next();
+                            Log.printLine("site: " + site);
                             if (site.equals(this.getName())) {
+                                Log.printLine("continue");
                                 continue;
                             }
                             /**
@@ -1540,7 +1556,7 @@ public class WFCDatacenter extends SimEntity {
                                 //bwth = dcStorage.getBandwidth(Integer.parseInt(site), vmId);
                             }
                             if (bwth > maxBwth) {
-                                Log.printLine(site);
+                                //Log.printLine(site);
                                 maxBwth = bwth;
                             }
                         }

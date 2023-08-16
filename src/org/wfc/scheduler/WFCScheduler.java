@@ -969,9 +969,9 @@ public class WFCScheduler extends SimEntity {
         BaseSchedulingAlgorithm scheduler = getScheduler(Parameters.getSchedulingAlgorithm());
         scheduler.setCloudletList(scheduledList);
         scheduler.setVmList(getVmsCreatedList());
-
+        System.out.println("cloudlet's size: " + scheduledList.size());
         try {
-            scheduler.run();
+                scheduler.run();
         } catch (Exception e) {
            
             Log.printLine("Error in configuring scheduler_method");
